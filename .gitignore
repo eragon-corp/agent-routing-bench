@@ -1,0 +1,4 @@
+workflows/*/runs/
+reports/
+*.pyc
+__pycache__/
