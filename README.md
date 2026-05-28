@@ -34,7 +34,7 @@ agent-routing-bench/
 
 | Method ID          | Description                                      | Model(s)                                      |
 |--------------------|--------------------------------------------------|-----------------------------------------------|
-| `cowork`           | Claude Cowork — no routing, single model         | `openrouter/anthropic/claude-sonnet-4.6`      |
+| `claude-code`      | Claude Code CLI — no routing, single agent run   | `claude` CLI, authenticated via `claude auth login` |
 | `eragon-norouting` | Eragon all-Opus — forces every step to Opus      | `anthropic/claude-opus-4-6` (all steps)       |
 | `eragon-routing`   | Eragon with routing — per-step model routing     | Per routing table in `skill.md`               |
 
@@ -89,7 +89,7 @@ python3 harness/orchestrate.py gmail-triage --method eragon-norouting
 ### Score a specific run manually
 
 ```bash
-python3 harness/judge.py deep-research --run-id run-001-cowork
+python3 harness/judge.py deep-research --run-id run-001-claude-code
 ```
 
 ### Generate/regenerate the aggregate report

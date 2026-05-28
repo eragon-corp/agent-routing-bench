@@ -7,7 +7,7 @@ Usage:
 
 Examples:
     python3 judge.py deep-research
-    python3 judge.py gmail-triage --run-id run-001-cowork
+    python3 judge.py gmail-triage --run-id run-001-claude-code
 
 Logic:
     1. Reads all completed runs from workflows/<name>/runs/ (or a specific run with --run-id).
@@ -209,7 +209,7 @@ def aggregate_scores(all_scores: list[dict], workflow: str) -> dict:
 
 def method_display(method: str) -> str:
     return {
-        "cowork":           "Claude Cowork",
+        "claude-code":      "Claude Code",
         "eragon-norouting": "Eragon No-Routing (all-Opus)",
         "eragon-routing":   "Eragon with Routing",
     }.get(method, method)

@@ -6,6 +6,7 @@
 workflow: gmail-triage
 version: 0.3.0
 requires_setup: true
+composio_mcp: user-configured
 parallelizable: false
 parallel_reason: "Side-effectful Gmail writes (drafts, trash). Sequential runs required to avoid inbox state collisions."
 steps_evaluated: [fetch, classify, draft, plan, report, trash]
@@ -16,7 +17,7 @@ runs_per_method: 5
 
 | Method ID          | Description                                                                                         | Model(s)                                                           | Routing Table Used? |
 |--------------------|-----------------------------------------------------------------------------------------------------|--------------------------------------------------------------------|---------------------|
-| `cowork`           | Claude Cowork (no routing). Single model, no per-step routing.                                      | `openrouter/anthropic/claude-sonnet-4.6` via `openrouter` provider | NO                  |
+| `claude-code`      | Claude Code CLI (`claude -p`). No routing, single autonomous agent run.                             | Claude Code CLI (must be authenticated via `claude auth login`)     | NO                  |
 | `eragon-norouting` | Eragon all-Opus baseline. Forces every step to Opus — no routing table.                             | `anthropic/claude-opus-4.6` via `anthropic` provider               | NO (all-Opus)       |
 | `eragon-routing`   | Eragon with routing. Uses the per-step routing table from `skill.md` (cost-optimized mix).          | Per routing table in `skill.md`                                    | YES                 |
 
@@ -32,12 +33,10 @@ runs_per_method: 5
 - At least 10 unimportant emails (newsletters, promos, cold outreach)
 - At least 2 emails with ambiguous classification (borderline cases)
 
+**Gmail access:** This workflow accesses Gmail via **Composio MCP** (user-configured). Ensure the Composio MCP server is running and authenticated before each benchmark run. The `claude-code` method uses Claude Code's native MCP tool support; the `eragon-*` methods use Eragon's bridge-owned Composio integration (`eragon-composio` command surface). No additional OAuth setup is needed beyond what Composio provides.
+
 **Pre-run checklist:**
-1. Confirm Google Workspace OAuth is connected:
-   ```bash
-   curl -s "${ERAGON_GATEWAY_URL:-http://localhost:18789}/__eragon_claw__/oauth/google-workspace/token" \
-     | python3 -c "import sys,json; d=json.load(sys.stdin); print('OK' if d.get('access_token') else 'FAIL')"
-   ```
+1. Confirm Composio MCP is connected and Gmail scopes are authorized.
 2. Snapshot inbox state (email IDs, label states) before each run for teardown.
 3. Ensure no pending drafts from prior runs pollute the inbox.
 
@@ -126,7 +125,7 @@ For each of the 6 steps (`fetch`, `classify`, `draft`, `plan`, `report`, `trash`
 **Comparison guidance:**
 - When scoring all 3 methods, evaluate each independently first, then note relative differences in the evidence.
 - Do NOT artificially inflate the `eragon-routing` score because it uses cheaper models — grade only on output quality.
-- Do NOT penalize `cowork` for lacking routing infrastructure — only score the output quality.
+- Do NOT penalize `claude-code` for lacking routing infrastructure — only score the output quality.
 - The `eragon-norouting` all-Opus run is the quality ceiling; scores for other methods should be interpreted relative to it.
 
 **Output format (strict JSON, no fences):**

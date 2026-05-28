@@ -16,7 +16,7 @@ runs_per_method: 5
 
 | Method ID          | Description                                                                                         | Model(s)                                                           | Routing Table Used? |
 |--------------------|-----------------------------------------------------------------------------------------------------|--------------------------------------------------------------------|---------------------|
-| `cowork`           | Claude Cowork (no routing). Single model, no per-step routing.                                      | `openrouter/anthropic/claude-sonnet-4.6` via `openrouter` provider | NO                  |
+| `claude-code`      | Claude Code CLI (`claude -p`). No routing, single autonomous agent run.                             | Claude Code CLI (must be authenticated via `claude auth login`)     | NO                  |
 | `eragon-norouting` | Eragon all-Opus baseline. Forces every step to Opus — no routing table.                             | `anthropic/claude-opus-4.6` via `anthropic` provider               | NO (all-Opus)       |
 | `eragon-routing`   | Eragon with routing. Uses the per-step routing table from `skill.md` (cost-optimized mix).          | Per routing table in `skill.md`                                    | YES                 |
 
