@@ -3,7 +3,7 @@
 orchestrate.py — Benchmarking orchestrator for agent-routing-bench
 
 Usage:
-    python3 orchestrate.py <workflow_name> [--runs 5] [--method all|cowork|eragon-norouting|eragon-routing]
+    python3 orchestrate.py <workflow_name> [--runs 5] [--method all|claude-code|eragon-norouting|eragon-routing]
 
 Examples:
     python3 orchestrate.py deep-research
@@ -24,7 +24,7 @@ from pathlib import Path
 # Constants
 # ---------------------------------------------------------------------------
 
-METHODS = ["cowork", "eragon-norouting", "eragon-routing"]
+METHODS = ["claude-code", "eragon-norouting", "eragon-routing"]
 MAX_PARALLEL_WORKERS = 5
 
 # Resolve paths relative to the repo root (parent of harness/)

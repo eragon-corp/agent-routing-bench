@@ -5,8 +5,8 @@
 #
 # Arguments:
 #   $1  workflow_name  — e.g. "deep-research" or "gmail-triage"
-#   $2  method         — one of: cowork | eragon-norouting | eragon-routing
-#   $3  run_id         — e.g. "run-001-cowork"
+#   $2  method         — one of: claude-code | eragon-norouting | eragon-routing
+#   $3  run_id         — e.g. "run-001-claude-code"
 #
 # Outputs (written to workflows/<name>/runs/<run_id>/):
 #   output.txt   — full stdout of the hermes invocation
@@ -63,14 +63,10 @@ HERMES_EXIT=0
 
 case "$METHOD" in
 
-  cowork)
-    # Claude Cowork: openrouter/anthropic/claude-sonnet-4.6 via openrouter, NO routing table.
-    # The skill is passed as the system/task prompt; -Q suppresses the interactive shell.
-    hermes chat \
-        -q "$(cat "${SKILL_FILE}")" \
-        -m "openrouter/anthropic/claude-sonnet-4.6" \
-        --provider openrouter \
-        -Q \
+  claude-code)
+    # Claude Code CLI: runs the skill as a prompt via `claude -p`, no routing table.
+    # Requires `claude` CLI in PATH and authenticated (claude auth login).
+    claude -p "$(cat "${SKILL_FILE}")" \
         > "${OUTPUT_FILE}" 2>&1 \
       || HERMES_EXIT=$?
     ;;
@@ -98,7 +94,7 @@ case "$METHOD" in
     ;;
 
   *)
-    echo "ERROR: Unknown method '${METHOD}'. Valid: cowork, eragon-norouting, eragon-routing" >&2
+    echo "ERROR: Unknown method '${METHOD}'. Valid: claude-code, eragon-norouting, eragon-routing" >&2
     exit 1
     ;;
 esac
