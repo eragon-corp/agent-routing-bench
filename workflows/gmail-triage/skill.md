@@ -88,7 +88,40 @@ Confirmed working downgrade candidates: `anthropic/claude-sonnet-4.6` (fetch, tr
 
 4. If any step errors, times out (`runTimeoutSeconds=600`), or fails model verification, abort the whole run. Report which step + which model + the failure reason.
 
+## MockMail MCP Server
+
+For benchmarking, email access is provided by **MockMail** — a local MCP server backed by a SQLite snapshot of a real inbox. Tool names are identical to the real Composio Gmail tools (`GMAIL_FETCH_EMAILS`, `GMAIL_CREATE_EMAIL_DRAFT`, etc.) so no step prompts change.
+
+**Setup on each benchmark instance (one-time):**
+```bash
+cd /path/to/agent-routing-bench/mock-email-mcp
+python3.10 -m pip install -r requirements.txt -q
+python3.10 seed.py   # creates seed.db from fixtures/seed_emails.json
+python3.10 reset.py  # copies seed.db → inbox.db (ready to run)
+```
+
+**Reset before each run** (restores inbox to seed state, instant):
+```bash
+python3.10 reset.py
+```
+
+**MCP config** (add to Hermes config or Claude Code config):
+```json
+{
+  "mcpServers": {
+    "mockmail": {
+      "command": "python3.10",
+      "args": ["/path/to/agent-routing-bench/mock-email-mcp/server.py"],
+      "env": { "MOCK_DB_PATH": "/path/to/agent-routing-bench/mock-email-mcp/inbox.db" }
+    }
+  }
+}
+```
+
+The inbox contains 114 emails (25 unread) seeded from a real inbox. Company names, amounts, URLs, and thread structure are verbatim; colleague/client names are anonymized.
+
 ## Prerequisites
+
 
 - Google Workspace OAuth must be connected. Verify:
   ```bash

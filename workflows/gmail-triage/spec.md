@@ -23,6 +23,35 @@ runs_per_method: 5
 
 **Rationale for all-Opus baseline:** `eragon-norouting` establishes a quality ceiling. The judge grades all other methods against this ceiling to determine whether cheaper routing degrades output quality.
 
+## MockMail MCP Server
+
+Email access for all three methods uses **MockMail** — a local MCP server at `mock-email-mcp/` in this repo. Tool names match Composio's Gmail slugs exactly. Claude Code accesses it via MCP config; Eragon methods access it via the same MCP config in Hermes.
+
+**Before the benchmark campaign (once per instance):**
+```bash
+cd mock-email-mcp
+python3.10 -m pip install -r requirements.txt -q
+python3.10 seed.py
+```
+
+**Before each run:**
+```bash
+python3.10 reset.py   # restores inbox.db to seed state instantly
+```
+
+**MCP config for both Claude Code and Hermes:**
+```json
+{
+  "mcpServers": {
+    "mockmail": {
+      "command": "python3.10",
+      "args": ["/path/to/mock-email-mcp/server.py"],
+      "env": { "MOCK_DB_PATH": "/path/to/mock-email-mcp/inbox.db" }
+    }
+  }
+}
+```
+
 ## Setup Requirements
 
 `requires_setup: true` — This workflow requires a live Gmail inbox pre-loaded with a realistic mix of emails before each run. A suitable inbox snapshot should contain:
