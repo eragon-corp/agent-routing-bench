@@ -6,16 +6,16 @@ A mock Gmail MCP server for benchmarking AI email agents. Exposes 10 Gmail-like 
 
 | Tool | Description |
 |---|---|
-| `GMAIL_FETCH_EMAILS` | Fetch/search emails with Gmail query syntax |
-| `GMAIL_CREATE_EMAIL_DRAFT` | Create a draft |
-| `GMAIL_DELETE_DRAFT` | Delete a draft by ID |
-| `GMAIL_LIST_DRAFTS` | List all drafts |
-| `GMAIL_SEND_EMAIL` | Send an email |
-| `GMAIL_REPLY_TO_THREAD` | Reply to an existing thread |
-| `GMAIL_ADD_LABEL_TO_EMAIL` | Add/remove labels on a message |
-| `GMAIL_MOVE_THREAD_TO_TRASH` | Move a thread to trash |
-| `GMAIL_LIST_LABELS` | List all Gmail labels |
-| `GMAIL_GET_ATTACHMENT` | Retrieve an attachment |
+| `MOCKMAIL_FETCH_EMAILS` | Fetch/search emails with Gmail query syntax |
+| `MOCKMAIL_CREATE_EMAIL_DRAFT` | Create a draft |
+| `MOCKMAIL_DELETE_DRAFT` | Delete a draft by ID |
+| `MOCKMAIL_LIST_DRAFTS` | List all drafts |
+| `MOCKMAIL_SEND_EMAIL` | Send an email |
+| `MOCKMAIL_REPLY_TO_THREAD` | Reply to an existing thread |
+| `MOCKMAIL_ADD_LABEL_TO_EMAIL` | Add/remove labels on a message |
+| `MOCKMAIL_MOVE_THREAD_TO_TRASH` | Move a thread to trash |
+| `MOCKMAIL_LIST_LABELS` | List all Gmail labels |
+| `MOCKMAIL_GET_ATTACHMENT` | Retrieve an attachment |
 
 ## Install
 

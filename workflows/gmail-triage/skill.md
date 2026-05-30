@@ -90,7 +90,7 @@ Confirmed working downgrade candidates: `anthropic/claude-sonnet-4.6` (fetch, tr
 
 ## MockMail MCP Server
 
-For benchmarking, email access is provided by **MockMail** — a local MCP server backed by a SQLite snapshot of a real inbox. Tool names are identical to the real Composio Gmail tools (`GMAIL_FETCH_EMAILS`, `GMAIL_CREATE_EMAIL_DRAFT`, etc.) so no step prompts change.
+For benchmarking, email access is provided by **MockMail** — a local MCP server backed by a SQLite snapshot of a real inbox. Tools are prefixed `MOCKMAIL_` (e.g. `MOCKMAIL_FETCH_EMAILS`, `MOCKMAIL_CREATE_EMAIL_DRAFT`) to avoid conflicts with Composio's built-in Gmail integration.
 
 **Setup on each benchmark instance (one-time):**
 ```bash

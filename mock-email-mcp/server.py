@@ -58,7 +58,7 @@ def _now_iso() -> str:
 
 
 def _row_to_message(row: sqlite3.Row, attachments: list[dict], fetch_full: bool = False) -> dict:
-    """Convert a DB row to the GMAIL_FETCH_EMAILS message shape."""
+    """Convert a DB row to the MOCKMAIL_FETCH_EMAILS message shape."""
     label_ids = json.loads(row["label_ids"]) if row["label_ids"] else []
     body_plain = row["body_plain"] or ""
     msg: dict[str, Any] = {
@@ -166,7 +166,7 @@ def _parse_query(query: str) -> tuple[list[str], list[dict]]:
 # ---------------------------------------------------------------------------
 
 @mcp.tool()
-def GMAIL_FETCH_EMAILS(
+def MOCKMAIL_FETCH_EMAILS(
     max_results: int = 50,
     query: str = "",
     fetch_full_message: bool = False,
@@ -199,7 +199,7 @@ def GMAIL_FETCH_EMAILS(
 
 
 @mcp.tool()
-def GMAIL_CREATE_EMAIL_DRAFT(
+def MOCKMAIL_CREATE_EMAIL_DRAFT(
     recipient_email: str,
     subject: str = "",
     body: str = "",
@@ -239,7 +239,7 @@ def GMAIL_CREATE_EMAIL_DRAFT(
 
 
 @mcp.tool()
-def GMAIL_DELETE_DRAFT(draft_id: str) -> dict:
+def MOCKMAIL_DELETE_DRAFT(draft_id: str) -> dict:
     """Delete a draft by ID."""
     if not draft_id:
         raise ValueError(
@@ -254,7 +254,7 @@ def GMAIL_DELETE_DRAFT(draft_id: str) -> dict:
 
 
 @mcp.tool()
-def GMAIL_LIST_DRAFTS(
+def MOCKMAIL_LIST_DRAFTS(
     max_results: int = 50,
     verbose: bool = False,
     page_token: str = "",
@@ -302,7 +302,7 @@ def GMAIL_LIST_DRAFTS(
 
 
 @mcp.tool()
-def GMAIL_SEND_EMAIL(
+def MOCKMAIL_SEND_EMAIL(
     recipient_email: str = "",
     subject: str = "",
     body: str = "",
@@ -351,7 +351,7 @@ def GMAIL_SEND_EMAIL(
 
 
 @mcp.tool()
-def GMAIL_REPLY_TO_THREAD(
+def MOCKMAIL_REPLY_TO_THREAD(
     thread_id: str,
     message_body: str = "",
     recipient_email: str = "",
@@ -400,7 +400,7 @@ def GMAIL_REPLY_TO_THREAD(
 
 
 @mcp.tool()
-def GMAIL_ADD_LABEL_TO_EMAIL(
+def MOCKMAIL_ADD_LABEL_TO_EMAIL(
     message_id: str,
     add_label_ids: list[str] = [],
     remove_label_ids: list[str] = [],
@@ -447,7 +447,7 @@ def GMAIL_ADD_LABEL_TO_EMAIL(
 
 
 @mcp.tool()
-def GMAIL_MOVE_THREAD_TO_TRASH(thread_id: str) -> dict:
+def MOCKMAIL_MOVE_THREAD_TO_TRASH(thread_id: str) -> dict:
     """Move all messages in a thread to Trash."""
     if not thread_id:
         raise ValueError(
@@ -487,7 +487,7 @@ def GMAIL_MOVE_THREAD_TO_TRASH(thread_id: str) -> dict:
 
 
 @mcp.tool()
-def GMAIL_LIST_LABELS() -> dict:
+def MOCKMAIL_LIST_LABELS() -> dict:
     """List all Gmail labels."""
     with get_conn() as conn:
         rows = conn.execute("SELECT * FROM labels").fetchall()
@@ -506,7 +506,7 @@ def GMAIL_LIST_LABELS() -> dict:
 
 
 @mcp.tool()
-def GMAIL_GET_ATTACHMENT(
+def MOCKMAIL_GET_ATTACHMENT(
     message_id: str,
     attachment_id: str,
     file_name: str,
