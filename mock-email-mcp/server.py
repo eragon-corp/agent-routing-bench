@@ -22,7 +22,7 @@ from fastmcp import FastMCP
 
 DB_PATH = Path(os.environ.get("MOCK_DB_PATH", "./inbox.db"))
 
-mcp = FastMCP("mock-gmail")
+mcp = FastMCP("mockmail")
 
 
 def get_conn() -> sqlite3.Connection:
