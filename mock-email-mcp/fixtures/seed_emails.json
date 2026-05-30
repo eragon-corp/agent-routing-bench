@@ -1223,7 +1223,7 @@
     "sender": "Eragon <tyler@eragon.ai>",
     "recipient": "lance@eragon.ai",
     "subject": "Reset Your Password",
-    "body_plain": "<h2>Reset Password</h2>\r\n\r\n<p>Follow this link to reset the password for your user:</p>\r\n<p><a href=\"https://lrabwnotxrvxhrbtpmjw.supabase.co/auth/v1/verify?token=pkce_b6bbdf23dc09a901694a8b389e3967015139a121763765fc8abdc980&amp;type=recovery&amp;redirect_to=https://deel7.eragon.ai/auth/callback\">Reset Password</a></p>\r\n",
+    "body_plain": "<h2>Reset Password</h2>\r\n\r\n<p>Follow this link to reset the password for your user:</p>\r\n<p><a href=\"https://lrabwnotxrvxhrbtpmjw.supabase.co/auth/v1/verify?token=pkce_b6bbdf23dc09a901694a8b389e3967015139a121763765fc8abdc980&amp;type=recovery&amp;redirect_to=https://ripple7.eragon.ai/auth/callback\">Reset Password</a></p>\r\n",
     "body_html": null,
     "internal_date": "2026-05-21T16:37:51Z",
     "snippet": "Reset Password Follow this link to reset the password for your user: Reset Password"
