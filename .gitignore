@@ -2,3 +2,6 @@ workflows/*/runs/
 reports/
 *.pyc
 __pycache__/
+
+mock-email-mcp/*.db
+mock-email-mcp/__pycache__/
