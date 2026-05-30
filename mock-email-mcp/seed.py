@@ -106,33 +106,7 @@ def seed(conn: sqlite3.Connection) -> None:
             ),
         )
 
-    # Insert 2 attachment rows
-    conn.execute(
-        """
-        INSERT INTO attachments (id, message_id, filename, mime_type, data)
-        VALUES (?, ?, ?, ?, ?)
-        """,
-        (
-            ATTACHMENT_PDF_ID,
-            OFFER_LETTER_MSG_ID,
-            "offer_letter.pdf",
-            "application/pdf",
-            b"%PDF-1.4 fake",
-        ),
-    )
-    conn.execute(
-        """
-        INSERT INTO attachments (id, message_id, filename, mime_type, data)
-        VALUES (?, ?, ?, ?, ?)
-        """,
-        (
-            ATTACHMENT_ICS_ID,
-            CALENDAR_INVITE_MSG_ID,
-            "invite.ics",
-            "text/calendar",
-            b"BEGIN:VCALENDAR fake",
-        ),
-    )
+    # No attachments in the current seed emails
 
     # Insert system labels
     conn.executemany(
