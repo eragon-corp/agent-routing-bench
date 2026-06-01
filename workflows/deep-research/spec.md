@@ -17,7 +17,7 @@ runs_per_method: 5
 | Method ID          | Description                                                                                         | Model(s)                                                           | Routing Table Used? |
 |--------------------|-----------------------------------------------------------------------------------------------------|--------------------------------------------------------------------|---------------------|
 | `claude-code`      | Claude Code CLI (`claude -p`). No routing, single autonomous agent run.                             | Claude Code CLI (must be authenticated via `claude auth login`)     | NO                  |
-| `eragon-norouting` | Eragon all-Opus baseline. Forces every step to Opus — no routing table.                             | `anthropic/claude-opus-4.6` via `anthropic` provider               | NO (all-Opus)       |
+| `eragon-norouting` | Eragon all-Opus baseline. Forces every step to Opus — no routing table.                             | `anthropic/claude-opus-4.8` via `openrouter` provider              | NO (all-Opus)       |
 | `eragon-routing`   | Eragon with routing. Uses the per-step routing table from `skill.md` (cost-optimized mix).          | Per routing table in `skill.md`                                    | YES                 |
 
 **Rationale for all-Opus baseline:** `eragon-norouting` establishes a quality ceiling. The judge grades all other methods against this ceiling to determine whether cheaper routing degrades output quality per step.

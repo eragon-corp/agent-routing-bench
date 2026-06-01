@@ -30,8 +30,8 @@ Don't use for:
 | scope      | Phase 1: Scope         | openrouter/anthropic/claude-sonnet-4.5 | mode="run"  | Nuanced query decomposition. Needs strong reasoning.           |
 | search     | Phase 2: Search        | openrouter/anthropic/claude-haiku-4.5  | mode="run"  | Tool-call heavy (web_search).                                 |
 | extract    | Phase 3: Extract       | openrouter/anthropic/claude-sonnet-4.5 | mode="run"  | Tool-call heavy (web_fetch).                                  |
-| analyze    | Phase 4: Analyze       | openrouter/anthropic/claude-opus-4.6   | mode="run"  | Deep reasoning: themes, contradictions, evidence quality.      |
-| synthesize-report | Phase 5a: Synthesize Report | openrouter/anthropic/claude-opus-4.6   | mode="run"  | Nuanced writing: executive summary, key findings, narrative.   |
+| analyze    | Phase 4: Analyze       | openrouter/anthropic/claude-opus-4.8   | mode="run"  | Deep reasoning: themes, contradictions, evidence quality.      |
+| synthesize-report | Phase 5a: Synthesize Report | openrouter/anthropic/claude-opus-4.8   | mode="run"  | Nuanced writing: executive summary, key findings, narrative.   |
 | synthesize-data   | Phase 5b: Synthesize Data   | openrouter/anthropic/claude-sonnet-4.5 | mode="run"  | Structured JSON dashboard data from report + analysis.         |
 | dashboard  | Phase 6: Dashboard     | openrouter/anthropic/claude-sonnet-4.5 | mode="run"  | HTML/CSS generation.                                          |
 
@@ -490,7 +490,7 @@ wallclock_s
 
 
 scope
-openrouter/anthropic/claude-opus-4.6
+openrouter/anthropic/claude-opus-4.8
 ✅
 ✅
 completed
@@ -498,7 +498,7 @@ completed
 
 
 search
-openrouter/anthropic/claude-opus-4.6
+openrouter/anthropic/claude-opus-4.8
 ✅
 ✅
 completed
@@ -506,7 +506,7 @@ completed
 
 
 extract
-openrouter/anthropic/claude-opus-4.6
+openrouter/anthropic/claude-opus-4.8
 ✅
 ✅
 completed
@@ -514,7 +514,7 @@ completed
 
 
 analyze
-openrouter/anthropic/claude-opus-4.6
+openrouter/anthropic/claude-opus-4.8
 ✅
 ✅
 completed
@@ -522,7 +522,7 @@ completed
 
 
 synthesize-report
-openrouter/anthropic/claude-opus-4.6
+openrouter/anthropic/claude-opus-4.8
 ✅
 ✅
 completed
@@ -530,7 +530,7 @@ completed
 
 
 synthesize-data
-openrouter/anthropic/claude-opus-4.6
+openrouter/anthropic/claude-opus-4.8
 ✅
 ✅
 completed
@@ -538,39 +538,13 @@ completed
 
 
 dashboard
-openrouter/anthropic/claude-opus-4.6
+openrouter/anthropic/claude-opus-4.8
 ✅
 ✅
 completed
 ...
 
 
-
----
-
-## Common Pitfalls
-
-1. **Silent model fallback.** Always check `modelApplied` after every spawn. Additionally verify the `MODEL_USED:` line. Abort on any mismatch.
-
-2. **`mode="run"` is context-isolated.** Each child starts fresh with only the `task` string. Always use `mode="run"`, never `mode="session"`.
-
-3. **Don't retry a failed step on a different model.** Fail loudly.
-
-4. **Rate limits on web_search and web_fetch.** Steps 2 and 3 must execute searches/fetches sequentially, not in parallel bursts. The step prompts explicitly instruct this.
-
-5. **web_fetch failures are expected.** Some URLs will 403, timeout, or return garbage. The extract step is designed to record failures and continue. Don't abort the whole run for individual fetch failures.
-
-6. **Synthesize is two steps.** Phase 5a (synthesize-report) outputs markdown only. Phase 5b (synthesize-data) outputs JSON only. The orchestrator must JSON-parse synthesize-data output and abort if invalid. Never combine these into a single call — the split exists to prevent output truncation.
-
-6b. **Dashboard must ALWAYS be a subagent.** Never fall back to the orchestrator generating HTML directly. If synthesize-data JSON is invalid, abort the entire run. If the dashboard subagent fails, abort. The "no retries on different models / fail loudly" policy extends to "no fallback to orchestrator".
-
-7. **HTML file size.** The dashboard should be under 50KB. If the dashboard step returns massive HTML, it may have included raw source text. The prompt constrains this but verify.
-
-8. **Canvas availability.** If no Eragon nodes are connected, the dashboard HTML can still be written to the workspace and opened in a browser manually, or presented via the webchat canvas. Check `nodes status` first.
-
-9. **Subagent timeout.** Phase 3 (extract) can run long on many sources. Keep `runTimeoutSeconds=600` on every step.
-
-10. **Source deduplication.** The search step deduplicates by URL. But different URL formats can point to the same content (http vs https, trailing slashes, query params). The search step should normalize URLs before dedup.
 
 ---
 

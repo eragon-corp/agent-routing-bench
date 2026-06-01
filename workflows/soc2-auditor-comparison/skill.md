@@ -7,20 +7,10 @@ license: MIT
 metadata:
   eragon:
     tags: [soc2, vendor-comparison, procurement, multimodel, routing]
-    related_skills: [gmail-triage-multimodel]
+    related_skills: [email-triage-multimodel]
 ---
 
 # SOC 2 Auditor Comparison — Per-Step Model Routing
-
-## Overview
-
-End-to-end vendor comparison workflow for a SOC 2 Type 2 audit decision. Searches Gmail and Slack for all conversations involving both auditor candidates, extracts key proposal terms, scores each firm on the three decision factors (timeline, reputation, price), flags any issues requiring discussion, and delivers a clear decision with reasoning.
-
-The two firms being compared:
-- **Advantage Partners** — contact: Andrew Topanian (atopanian@advantage-partners.com)
-- **Prescient Security / Prescient Assurance** — contact: Griffin Mello (griffin.mello@prescientsecurity.com)
-
-Each phase runs as **its own `sessions_spawn` subagent on a step-specific model with explicit context isolation**.
 
 ## Model Routing Table
 
@@ -28,11 +18,11 @@ Each phase runs as **its own `sessions_spawn` subagent on a step-specific model 
 
 | Step ID    | Phase                        | Model                          | Provider   | Isolation  | Rationale                                                        |
 |------------|------------------------------|--------------------------------|------------|------------|------------------------------------------------------------------|
-| fetch      | Phase 1: Fetch emails        | anthropic/claude-opus-4.6      | openrouter | mode="run" | Tool-call + judgment; needs to find all relevant threads.        |
+| fetch      | Phase 1: Fetch emails        | anthropic/claude-opus-4.8      | openrouter | mode="run" | Tool-call + judgment; needs to find all relevant threads.        |
 | slack      | Phase 2: Fetch Slack context | anthropic/claude-sonnet-4.6    | openrouter | mode="run" | Tool-call heavy, structured extraction.                          |
-| extract    | Phase 3: Extract terms       | anthropic/claude-opus-4.6      | openrouter | mode="run" | Nuanced extraction from messy email threads.                     |
-| score      | Phase 4: Score & flag        | anthropic/claude-opus-4.6      | openrouter | mode="run" | Judgment-heavy: weight three factors, flag issues.               |
-| decide     | Phase 5: Decision            | anthropic/claude-opus-4.6      | openrouter | mode="run" | Final synthesis and recommendation.                              |
+| extract    | Phase 3: Extract terms       | anthropic/claude-opus-4.8      | openrouter | mode="run" | Nuanced extraction from messy email threads.                     |
+| score      | Phase 4: Score & flag        | anthropic/claude-opus-4.8      | openrouter | mode="run" | Judgment-heavy: weight three factors, flag issues.               |
+| decide     | Phase 5: Decision            | anthropic/claude-opus-4.8      | openrouter | mode="run" | Final synthesis and recommendation.                              |
 
 ## Routing Protocol (orchestrator must follow exactly)
 
@@ -69,12 +59,6 @@ Each phase runs as **its own `sessions_spawn` subagent on a step-specific model 
 - `extract` — needs `fetch.output` + `slack.output`
 - `score` — needs `extract.output`
 - `decide` — needs `extract.output` + `score.output`
-
----
-
-## Inputs
-
-No required inputs — the workflow is self-contained. It knows the two firms and searches for all relevant communications automatically.
 
 ---
 
@@ -294,24 +278,12 @@ Step timings:
 --- ROUTING AUDIT ---
 | Step    | Model                       | modelApplied | MODEL_USED verified | wallclock_s |
 |---------|-----------------------------|--------------|---------------------|-------------|
-| fetch   | anthropic/claude-opus-4.6   | -            | -                   | Xs          |
+| fetch   | anthropic/claude-opus-4.8   | -            | -                   | Xs          |
 | slack   | anthropic/claude-sonnet-4.6 | -            | -                   | Xs          |
-| extract | anthropic/claude-opus-4.6   | -            | -                   | Xs          |
-| score   | anthropic/claude-opus-4.6   | -            | -                   | Xs          |
-| decide  | anthropic/claude-opus-4.6   | -            | -                   | Xs          |
+| extract | anthropic/claude-opus-4.8   | -            | -                   | Xs          |
+| score   | anthropic/claude-opus-4.8   | -            | -                   | Xs          |
+| decide  | anthropic/claude-opus-4.8   | -            | -                   | Xs          |
 ```
-
----
-
-## Common Pitfalls
-
-1. **Slack not connected.** Handle gracefully — `slack` step returns `{"slack_available": false}` and extract notes this.
-2. **Prescient price not in emails.** Proposal is behind a link. Return `price: null`, score neutral (3), flag it.
-3. **Thread deduplication.** Same body appears in forwarded chains. Deduplicate by messageId.
-4. **Internal sentiment is thin.** Only two people commented. Quote directly, don't over-weight.
-5. **Model verification abort.** If `modelApplied` false on any step, abort immediately.
-
----
 
 ## Verification Checklist
 

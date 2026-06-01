@@ -72,12 +72,12 @@ case "$METHOD" in
     ;;
 
   eragon-norouting)
-    # Eragon all-Opus baseline: anthropic/claude-opus-4-6 via anthropic provider.
+    # Eragon all-Opus baseline: anthropic/claude-opus-4.8 via OpenRouter provider.
     # Forces all steps to Opus, ignoring any routing table in the skill.
     hermes chat \
         -q "$(cat "${SKILL_FILE}")" \
-        -m "anthropic/claude-opus-4-6" \
-        --provider anthropic \
+        -m "anthropic/claude-opus-4.8" \
+        --provider openrouter \
         -Q \
         > "${OUTPUT_FILE}" 2>&1 \
       || HERMES_EXIT=$?

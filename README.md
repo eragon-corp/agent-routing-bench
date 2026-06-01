@@ -35,7 +35,7 @@ agent-routing-bench/
 | Method ID          | Description                                      | Model(s)                                      |
 |--------------------|--------------------------------------------------|-----------------------------------------------|
 | `claude-code`      | Claude Code CLI — no routing, single agent run   | `claude` CLI, authenticated via `claude auth login` |
-| `eragon-norouting` | Eragon all-Opus — forces every step to Opus      | `anthropic/claude-opus-4-6` (all steps)       |
+| `eragon-norouting` | Eragon all-Opus — forces every step to Opus      | `anthropic/claude-opus-4.8` via OpenRouter (all steps) |
 | `eragon-routing`   | Eragon with routing — per-step model routing     | Per routing table in `skill.md`               |
 
 The `eragon-norouting` all-Opus run is the quality ceiling. Everything else is graded against it.

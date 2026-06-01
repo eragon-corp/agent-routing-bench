@@ -1,22 +1,22 @@
 ---
-name: gmail-triage-multimodel
-description: Triage Gmail inbox with per-step model routing — each phase runs as an isolated sessions_spawn subagent on a step-specific model. Routing table uses a cost-optimized mix: Opus for classify/draft, Sonnet for fetch/trash, and DeepSeek for plan/report.
+name: email-triage-multimodel
+description: Triage an email inbox with per-step model routing — each phase runs as an isolated sessions_spawn subagent on a step-specific model. Routing table uses a cost-optimized mix: Opus for classify/draft, Sonnet for fetch/trash, and DeepSeek for plan/report.
 version: 0.3.0
 author: Eragon
 license: MIT
 metadata:
   eragon:
-    tags: [gmail, triage, multimodel, routing]
+    tags: [email, triage, multimodel, routing]
     related_skills: [gog]
 ---
 
-# Gmail Triage — Per-Step Model Routing
+# Email Triage — Per-Step Model Routing
 
 ## Overview
 
-End-to-end Gmail triage workflow: fetch unread + actionable read mail, classify, draft replies (don't send), plan non-reply actions, report in 3 sections, auto-trash unimportant mail.
+End-to-end email triage workflow: fetch unread + actionable read mail, classify, draft replies (don't send), plan non-reply actions, report in 3 sections, auto-trash unimportant mail.
 
-Each phase runs as **its own `sessions_spawn` subagent on a step-specific model with explicit context isolation**, so models can be swapped per row in the routing table without rewriting the skill. The current routing uses a cost-optimized mix: Opus 4.6 for high-judgment steps (classify, draft), Sonnet 4.6 for tool-call-heavy steps (fetch, trash), and DeepSeek V4 Pro for lightweight steps (plan, report).
+Each phase runs as **its own `sessions_spawn` subagent on a step-specific model with explicit context isolation**, so models can be swapped per row in the routing table without rewriting the skill. The current routing uses a cost-optimized mix: Opus 4.8 for high-judgment steps (classify, draft), Sonnet 4.6 for tool-call-heavy steps (fetch, trash), and DeepSeek V4 Pro for lightweight steps (plan, report).
 
 ## When to Use
 
@@ -36,8 +36,8 @@ Known compatible model IDs include `anthropic/claude-sonnet-4.6` for fetch/trash
 | Step ID  | Phase             | Model                          | Provider    | Isolation   | Rationale                                                     |
 |----------|-------------------|--------------------------------|-------------|-------------|---------------------------------------------------------------|
 | fetch    | Phase 1: Fetch    | anthropic/claude-sonnet-4.6    | openrouter  | mode="run"  | Tool-call heavy but structured; Sonnet handles reliably.      |
-| classify | Phase 2: Classify | anthropic/claude-opus-4.6      | openrouter  | mode="run"  | Nuanced judgment (important vs noise).                        |
-| draft    | Phase 3: Draft    | anthropic/claude-opus-4.6      | openrouter  | mode="run"  | Tone-matching + thread context.                               |
+| classify | Phase 2: Classify | anthropic/claude-opus-4.8      | openrouter  | mode="run"  | Nuanced judgment (important vs noise).                        |
+| draft    | Phase 3: Draft    | anthropic/claude-opus-4.8      | openrouter  | mode="run"  | Tone-matching + thread context.                               |
 | plan     | Phase 4: Plan     | deepseek/deepseek-v4-pro       | openrouter  | mode="run"  | Light reasoning; DeepSeek handles action plans at 6% cost.    |
 | report   | Phase 5: Report   | deepseek/deepseek-v4-pro       | openrouter  | mode="run"  | Pure formatting; DeepSeek handles markdown assembly cheaply.  |
 | trash    | Phase 6: Trash    | anthropic/claude-sonnet-4.6    | openrouter  | mode="run"  | Tool-call only, no reasoning; Sonnet is sufficient.           |
@@ -90,7 +90,7 @@ Known compatible model IDs include `anthropic/claude-sonnet-4.6` for fetch/trash
 
 ## MockMail MCP Server
 
-Email access is provided by **MockMail** — a local MCP server backed by a SQLite inbox snapshot. Tools are prefixed `MOCKMAIL_` (e.g. `MOCKMAIL_FETCH_EMAILS`, `MOCKMAIL_CREATE_EMAIL_DRAFT`) to avoid conflicts with Composio's built-in Gmail integration.
+Email access is provided by **MockMail** — a local MCP server backed by a SQLite inbox snapshot. Tools are prefixed `MOCKMAIL_` (e.g. `MOCKMAIL_FETCH_EMAILS`, `MOCKMAIL_CREATE_EMAIL_DRAFT`). MockMail exposes Gmail-like tool schemas and Gmail-style search syntax, but this workflow should otherwise treat the source as generic email.
 
 **Setup (one-time):**
 ```bash
@@ -120,32 +120,6 @@ python3.10 reset.py
 
 The inbox contains 114 emails (25 unread) seeded from a real inbox. Company names, amounts, URLs, and thread structure are verbatim; colleague/client names are anonymized.
 
-## Prerequisites
-
-
-- Google Workspace OAuth must be connected. Verify:
-  ```bash
-  curl -s "${ERAGON_GATEWAY_URL:-http://localhost:18789}/__eragon_claw__/oauth/google-workspace/token" \
-    | python3 -c "import sys,json; d=json.load(sys.stdin); print('OK' if d.get('access_token') else 'FAIL')"
-  ```
-  If FAIL, direct the user to connect at: `https://lance100.eragon.ai/__eragon_claw__/oauth/google-workspace/authorize`
-
-## Gmail API Helper (used inside every step)
-
-Every subagent task includes this token-fetch pattern so steps are self-contained:
-
-```bash
-GW="${ERAGON_GATEWAY_URL:-http://localhost:18789}"
-TOKEN=$(curl -s "$GW/__eragon_claw__/oauth/google-workspace/token" \
-  | python3 -c "import sys,json; print(json.load(sys.stdin)['access_token'])")
-GMAIL="https://www.googleapis.com/gmail/v1/users/me"
-```
-
-All Gmail REST calls then use `-H "Authorization: Bearer $TOKEN"`.
-
-**Do NOT use `gog` CLI** — it cannot use gateway-managed tokens.
-**Do NOT read auth-profiles.json directly** — use the gateway token endpoint only.
-
 ## Inputs
 
 Single optional arg passed in the orchestrator's user message:
@@ -156,19 +130,13 @@ Single optional arg passed in the orchestrator's user message:
 ```
 ROUTING_VERIFY: Echo the first line of your response as: MODEL_USED:<your model id>
 
-You are running as one isolated step of a Gmail triage workflow.
-
-Gmail access — token fetch (run this before any Gmail API call):
-  GW="${ERAGON_GATEWAY_URL:-http://localhost:18789}"
-  TOKEN=$(curl -s "$GW/__eragon_claw__/oauth/google-workspace/token" \
-    | python3 -c "import sys,json; print(json.load(sys.stdin)['access_token'])")
-  GMAIL="https://www.googleapis.com/gmail/v1/users/me"
+You are running as one isolated step of an email triage workflow.
 
 Rules:
 - Never auto-send email. Drafts only. Trashing is allowed (recoverable 30d).
 - When in doubt about classification, prefer "important_fyi" over "unimportant".
 - Return your output as plain text or JSON only — no preamble after MODEL_USED, no sign-off, no markdown fences unless explicitly asked.
-- Use exec() / shell commands for all Gmail API calls.
+- Use MockMail MCP tools for all email access and mutation.
 ```
 
 ---
@@ -185,20 +153,18 @@ Full prompt to subagent (after shared preamble):
 Task: fetch candidate inbox emails for triage.
 
 1. Fetch unread inbox messages (paginate if nextPageToken present):
-   curl -s "$GMAIL/messages?q=is:unread+in:inbox&maxResults=50" -H "Authorization: Bearer $TOKEN"
+   MOCKMAIL_FETCH_EMAILS(max_results=50, query="is:unread in:inbox", fetch_full_message=false)
 
 2. Fetch recent read actionable messages:
-   curl -s "$GMAIL/messages?q=is:read+in:inbox+-category:promotions+-category:social+newer_than:14d&maxResults=50" -H "Authorization: Bearer $TOKEN"
+   MOCKMAIL_FETCH_EMAILS(max_results=50, query="is:read in:inbox newer_than:14d", fetch_full_message=false)
 
-3. For each message ID from both lists, fetch metadata:
-   curl -s "$GMAIL/messages/<ID>?format=metadata&metadataHeaders=From,Subject,Date" \
-     -H "Authorization: Bearer $TOKEN"
+3. The fetch tool returns the message fields needed for triage. Deduplicate by threadId.
 
-4. Dedupe by threadId. Cap total at {{max_emails}}.
+4. Cap total at {{max_emails}}.
 
 5. For each surviving message extract: id, threadId, from, subject, snippet, internalDate, labelIds.
 
-Note: If the response has a nextPageToken, fetch the next page using &pageToken=<token>
+Note: MockMail supports Gmail-style query syntax. If the response has a nextPageToken, fetch the next page using next_page_token=<token>
 until exhausted or cap is reached. Note "TRUNCATED:Y" if you hit the cap.
 
 Return JSON only (no fences):
@@ -269,20 +235,8 @@ For each id in classification.important_action where the last message is FROM so
 1. Compose a concise reply: direct, no filler, no "Hope you're well".
    Insert [CONFIRM:<fact>] wherever a fact isn't grounded in the email thread.
 
-2. Create the draft via Gmail API:
-   curl -s -X POST "$GMAIL/drafts" \
-     -H "Authorization: Bearer $TOKEN" \
-     -H "Content-Type: application/json" \
-     -d '{
-       "message": {
-         "threadId": "<threadId>",
-         "raw": "<base64url-encoded RFC 2822 message with To/Subject/body>"
-       }
-     }'
-
-   To base64url-encode the raw message in shell:
-   printf '%s' "To: <to>\r\nSubject: Re: <subject>\r\nContent-Type: text/plain\r\n\r\n<body>" \
-     | python3 -c "import sys,base64; print(base64.urlsafe_b64encode(sys.stdin.buffer.read()).decode())"
+2. Create the draft with MockMail:
+   MOCKMAIL_CREATE_EMAIL_DRAFT(recipient_email="<to>", subject="Re: <subject>", body="<body>")
 
 3. Capture the returned draft id from the response.
 
@@ -384,8 +338,8 @@ Inputs:
 classification: {{classify.output}}
 
 For each id in classification.unimportant:
-  curl -s -X POST "$GMAIL/messages/<id>/trash" \
-    -H "Authorization: Bearer $TOKEN"
+  Find the corresponding threadId from the fetched email data and call:
+  MOCKMAIL_MOVE_THREAD_TO_TRASH(thread_id="<threadId>")
 
 Capture the result of each call. If the call returns a non-200 status or an "error" field,
 record it in failed[].
@@ -417,8 +371,8 @@ After all 6 steps succeed, the orchestrator's reply is:
 | step     | model                     | modelApplied | model_verified | exit_status | wallclock_s |
 |----------|---------------------------|--------------|----------------|-------------|-------------|
 | fetch    | anthropic/claude-sonnet-4.6  | ✅           | ✅             | completed   | 12.4        |
-| classify | anthropic/claude-opus-4.6    | ✅           | ✅             | completed   | 18.1        |
-| draft    | anthropic/claude-opus-4.6    | ✅           | ✅             | completed   | 34.7        |
+| classify | anthropic/claude-opus-4.8    | ✅           | ✅             | completed   | 18.1        |
+| draft    | anthropic/claude-opus-4.8    | ✅           | ✅             | completed   | 34.7        |
 | plan     | deepseek/deepseek-v4-pro     | ✅           | ✅             | completed   | 6.3         |
 | report   | deepseek/deepseek-v4-pro     | ✅           | ✅             | completed   | 4.9         |
 | trash    | anthropic/claude-sonnet-4.6  | ✅           | ✅             | completed   | 9.0         |
@@ -435,30 +389,6 @@ Keep this audit with the run output for troubleshooting and reproducibility.
 
 ---
 
-## Common Pitfalls
-
-1. **Silent model fallback.** Eragon's `sessions_spawn` returns `modelApplied: true/false` to indicate whether the model override took effect. If the requested model ID is invalid or unavailable, `modelApplied` will be `false` and the child runs on the default model — silently. **Always check `modelApplied` after every spawn.** Additionally, verify the `MODEL_USED:` line in the child's output as a second layer of defense. Abort on any mismatch.
-
-2. **`mode="run"` is already context-isolated.** In Eragon, `mode="run"` subagents do NOT inherit the parent transcript — they start fresh with only the `task` string. This is the correct behavior for this skill. Always use `mode="run"`, never `mode="session"` (which would make the child persistent and potentially inherit context if thread-bound). Each child only needs the structured upstream JSON passed via the `task` parameter.
-
-3. **Don't retry a failed step on a different model.** Fail loudly, don't fall back.
-
-4. **Save upstream inputs to files.** Write each step output to a stable file before passing it downstream. This makes the run inspectable and lets you rerun a later step with the exact same inputs.
-
-5. **`AGENTS.md` is auto-inherited; persona/identity/memory files are not.** Stable triage rules should go in `AGENTS.md` or in the task brief. Don't rely on parent session context to ship rules to children — `mode="run"` children don't get it.
-
-6. **Gmail API pagination.** `messages.list` returns at most 500 IDs per page and defaults to 100. Use `nextPageToken` to paginate. Note "TRUNCATED:Y" if you hit the cap so downstream steps know the sample is partial.
-
-7. **Gateway token expiry.** The gateway endpoint refreshes tokens automatically, but if it returns an error, the user needs to re-authorize at the OAuth link. Don't cache the token across step calls — re-fetch at the top of each subagent.
-
-8. **Subagent timeout too low.** Phase 3 (draft) can run 60–120 s on a busy inbox. Keep `runTimeoutSeconds=600` on every step.
-
-9. **base64url encoding for Gmail draft raw field.** The raw message must be RFC 2822 format, base64url-encoded (not standard base64). Use `base64.urlsafe_b64encode` in Python; strip `=` padding if needed by the API.
-
-10. **Draft vs Send.** The Gmail API `/drafts` endpoint creates a draft. `/messages/send` sends immediately. This skill NEVER calls `/messages/send`.
-
----
-
 ## Verification Checklist
 
 - [ ] Every `sessions_spawn` call passes `model` from the routing table (not inherited, not hardcoded inline).
@@ -471,6 +401,5 @@ Keep this audit with the run output for troubleshooting and reproducibility.
 - [ ] `{{report.output}}` has the 3 required sections.
 - [ ] Number of drafts in Phase 3 ≤ number of `important_action` emails in Phase 2.
 - [ ] Number trashed in Phase 6 = number of `unimportant` emails in Phase 2.
-- [ ] No email was sent (only drafts created via `/drafts` endpoint).
-- [ ] No permanent deletes — `/trash` only, never `/delete`.
-- [ ] Google Workspace OAuth token was valid for the entire run (no 401 errors in step outputs).
+- [ ] No email was sent (only drafts created via `MOCKMAIL_CREATE_EMAIL_DRAFT`).
+- [ ] No permanent deletes — trash only, never delete.
