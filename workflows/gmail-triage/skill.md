@@ -1,44 +1,43 @@
 ---
 name: gmail-triage-multimodel
-description: Triage Gmail inbox with per-step model routing — each phase runs as an isolated sessions_spawn subagent on a step-specific model. Routing table uses a cost-optimized mix (Opus for classify/draft, Sonnet for fetch/trash, DeepSeek for plan/report) at ~$0.33/run (−38% vs. all-Opus).
+description: Triage Gmail inbox with per-step model routing — each phase runs as an isolated sessions_spawn subagent on a step-specific model. Routing table uses a cost-optimized mix: Opus for classify/draft, Sonnet for fetch/trash, and DeepSeek for plan/report.
 version: 0.3.0
 author: Eragon
 license: MIT
 metadata:
   eragon:
-    tags: [gmail, triage, multimodel, routing, evaluation]
+    tags: [gmail, triage, multimodel, routing]
     related_skills: [gog]
 ---
 
-# Gmail Triage — Per-Step Model Routing (Evaluation Harness)
+# Gmail Triage — Per-Step Model Routing
 
 ## Overview
 
 End-to-end Gmail triage workflow: fetch unread + actionable read mail, classify, draft replies (don't send), plan non-reply actions, report in 3 sections, auto-trash unimportant mail.
 
-Each phase runs as **its own `sessions_spawn` subagent on a step-specific model with explicit context isolation**, so models can be swapped per row in the routing table without rewriting the skill. The current routing uses a cost-optimized mix: Opus 4.6 for high-judgment steps (classify, draft), Sonnet 4.6 for tool-call-heavy steps (fetch, trash), and DeepSeek V4 Pro for lightweight steps (plan, report) — cutting per-run cost by ~38%.
+Each phase runs as **its own `sessions_spawn` subagent on a step-specific model with explicit context isolation**, so models can be swapped per row in the routing table without rewriting the skill. The current routing uses a cost-optimized mix: Opus 4.6 for high-judgment steps (classify, draft), Sonnet 4.6 for tool-call-heavy steps (fetch, trash), and DeepSeek V4 Pro for lightweight steps (plan, report).
 
 ## When to Use
 
-- Evaluating per-step model routing for inbox triage (the primary use case today).
 - Any time you want each phase isolated in its own subagent with its own model (no shared context, no transcript bleed between phases).
 
 Don't use for:
-- Routine inbox triage where one model is fine — this multi-step routing harness is slower than running the same workflow in one session.
-- Composing one large reply from scratch — this skill is a triage harness, not a writer.
+- Routine inbox triage where one model is fine — this multi-step routing workflow is slower than running the same workflow in one session.
+- Composing one large reply from scratch — this skill is a triage workflow, not a writer.
 
 ## Model Routing Table
 
 **Edit this table to change per-step models. Nothing else changes.** The orchestrator reads this table and passes `model=<model>` to each `sessions_spawn` call.
 
 To list available model IDs, run `session_status` or check `/status` in chat.
-Confirmed working downgrade candidates: `anthropic/claude-sonnet-4.6` (fetch, trash), `deepseek/deepseek-v4-pro` (plan, report)
+Known compatible model IDs include `anthropic/claude-sonnet-4.6` for fetch/trash and `deepseek/deepseek-v4-pro` for plan/report.
 
 | Step ID  | Phase             | Model                          | Provider    | Isolation   | Rationale                                                     |
 |----------|-------------------|--------------------------------|-------------|-------------|---------------------------------------------------------------|
 | fetch    | Phase 1: Fetch    | anthropic/claude-sonnet-4.6    | openrouter  | mode="run"  | Tool-call heavy but structured; Sonnet handles reliably.      |
-| classify | Phase 2: Classify | anthropic/claude-opus-4.6      | openrouter  | mode="run"  | Nuanced judgment (important vs noise). Quality ceiling.       |
-| draft    | Phase 3: Draft    | anthropic/claude-opus-4.6      | openrouter  | mode="run"  | Tone-matching + thread context. Quality ceiling.              |
+| classify | Phase 2: Classify | anthropic/claude-opus-4.6      | openrouter  | mode="run"  | Nuanced judgment (important vs noise).                        |
+| draft    | Phase 3: Draft    | anthropic/claude-opus-4.6      | openrouter  | mode="run"  | Tone-matching + thread context.                               |
 | plan     | Phase 4: Plan     | deepseek/deepseek-v4-pro       | openrouter  | mode="run"  | Light reasoning; DeepSeek handles action plans at 6% cost.    |
 | report   | Phase 5: Report   | deepseek/deepseek-v4-pro       | openrouter  | mode="run"  | Pure formatting; DeepSeek handles markdown assembly cheaply.  |
 | trash    | Phase 6: Trash    | anthropic/claude-sonnet-4.6    | openrouter  | mode="run"  | Tool-call only, no reasoning; Sonnet is sufficient.           |
@@ -73,6 +72,7 @@ Confirmed working downgrade candidates: `anthropic/claude-sonnet-4.6` (fetch, tr
      ```
    - Record wall-clock elapsed time after completion.
    - Capture the subagent's reply as `{{<step_id>.output}}`.
+   - Save the captured output to a per-step file before continuing, so intermediate work is available for inspection and reruns.
 
 3. **Verify model routing after every spawn.** After each `sessions_spawn` completes, check two things:
 
@@ -84,15 +84,15 @@ Confirmed working downgrade candidates: `anthropic/claude-sonnet-4.6` (fetch, tr
 
    **Both checks must pass.** `modelApplied` catches Eragon-level fallback; `MODEL_USED:` catches model self-reporting errors.
 
-   If either check fails: **abort the entire run**, report which step failed, and do NOT retry on a different model — that poisons the routing evaluation.
+   If either check fails: **abort the entire run**, report which step failed, and do NOT retry on a different model.
 
 4. If any step errors, times out (`runTimeoutSeconds=600`), or fails model verification, abort the whole run. Report which step + which model + the failure reason.
 
 ## MockMail MCP Server
 
-For benchmarking, email access is provided by **MockMail** — a local MCP server backed by a SQLite snapshot of a real inbox. Tools are prefixed `MOCKMAIL_` (e.g. `MOCKMAIL_FETCH_EMAILS`, `MOCKMAIL_CREATE_EMAIL_DRAFT`) to avoid conflicts with Composio's built-in Gmail integration.
+Email access is provided by **MockMail** — a local MCP server backed by a SQLite inbox snapshot. Tools are prefixed `MOCKMAIL_` (e.g. `MOCKMAIL_FETCH_EMAILS`, `MOCKMAIL_CREATE_EMAIL_DRAFT`) to avoid conflicts with Composio's built-in Gmail integration.
 
-**Setup on each benchmark instance (one-time):**
+**Setup (one-time):**
 ```bash
 cd /path/to/agent-routing-bench/mock-email-mcp
 python3.10 -m pip install -r requirements.txt -q
@@ -431,18 +431,7 @@ Column definitions:
 - **exit_status** — `completed` / `error` / `timeout` from the subagent completion event
 - **wallclock_s** — orchestrator-measured wall-clock seconds for the spawn
 
-This is what the LLM judge ingests to decide which rows can be downgraded.
-
----
-
-## How the LLM Judge Refines Routing Later
-
-1. Run this skill end-to-end with **all-Opus** on, say, 5 different inbox snapshots → collect (output, latency) per step per run.
-2. Re-run each individual step with a candidate cheaper model using the **same `{{prior_step.output}}`** from the Opus run as input. Holding upstream constant isolates the swap.
-3. Judge model scores each candidate output against the Opus baseline on a 1–5 rubric (correctness, completeness, format adherence). Anything ≥ 4 on a cheaper model wins that step.
-4. Update the routing table in this file. No code changes — just edit the table.
-
-**Why all-Opus first:** gives the judge a quality ceiling to grade against. If we started on a mix, a low score could be the model *or* the step being hard.
+Keep this audit with the run output for troubleshooting and reproducibility.
 
 ---
 
@@ -452,9 +441,9 @@ This is what the LLM judge ingests to decide which rows can be downgraded.
 
 2. **`mode="run"` is already context-isolated.** In Eragon, `mode="run"` subagents do NOT inherit the parent transcript — they start fresh with only the `task` string. This is the correct behavior for this skill. Always use `mode="run"`, never `mode="session"` (which would make the child persistent and potentially inherit context if thread-bound). Each child only needs the structured upstream JSON passed via the `task` parameter.
 
-3. **Don't retry a failed step on a different model.** Defeats the routing-evaluation purpose. Fail loudly, don't fall back.
+3. **Don't retry a failed step on a different model.** Fail loudly, don't fall back.
 
-4. **Pin upstream inputs for candidate runs.** When the judge swaps a cheaper model into step N, the inputs to step N must be the *Opus baseline* outputs from steps 1..N-1 — not the candidate's own upstream. Save baseline outputs to files before running candidate comparisons.
+4. **Save upstream inputs to files.** Write each step output to a stable file before passing it downstream. This makes the run inspectable and lets you rerun a later step with the exact same inputs.
 
 5. **`AGENTS.md` is auto-inherited; persona/identity/memory files are not.** Stable triage rules should go in `AGENTS.md` or in the task brief. Don't rely on parent session context to ship rules to children — `mode="run"` children don't get it.
 

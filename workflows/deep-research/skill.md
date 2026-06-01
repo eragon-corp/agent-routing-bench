@@ -9,17 +9,16 @@ description: Deep research on any well-defined topic using a multi-model subagen
 
 End-to-end research workflow: refine a topic into searchable queries, search the web in parallel, extract and read sources, analyze findings for themes and contradictions, synthesize a structured report, and render an interactive HTML dashboard on Eragon's canvas.
 
-Each phase runs as **its own `sessions_spawn` subagent on a step-specific model with explicit context isolation**, so an LLM judge can later swap the model per row in the routing table without rewriting the skill.
+Each phase runs as **its own `sessions_spawn` subagent on a step-specific model with explicit context isolation**, so models can be swapped per row in the routing table without rewriting the skill.
 
 ## When to Use
 
 - Deep-diving into a topic: technology surveys, market analysis, policy research, competitive intelligence, literature reviews.
 - When the user wants a visual dashboard summarizing findings (not just a text wall).
-- Evaluating per-step model routing for research pipelines.
 
 Don't use for:
 - Quick factual questions — just use `web_search` directly.
-- Opinions or creative writing — this is a research harness.
+- Opinions or creative writing — this is a research workflow.
 - Tasks requiring real-time data feeds or API integrations beyond web search.
 
 ## Model Routing Table
@@ -29,14 +28,12 @@ Don't use for:
 | Step ID    | Phase                  | Model                       | Isolation   | Rationale                                                      |
 |------------|------------------------|-----------------------------|-------------|----------------------------------------------------------------|
 | scope      | Phase 1: Scope         | openrouter/anthropic/claude-sonnet-4.5 | mode="run"  | Nuanced query decomposition. Needs strong reasoning.           |
-| search     | Phase 2: Search        | openrouter/anthropic/claude-haiku-4.5  | mode="run"  | Tool-call heavy (web_search). Quality ceiling baseline.        |
-| extract    | Phase 3: Extract       | openrouter/anthropic/claude-sonnet-4.5 | mode="run"  | Tool-call heavy (web_fetch). Quality ceiling baseline.         |
+| search     | Phase 2: Search        | openrouter/anthropic/claude-haiku-4.5  | mode="run"  | Tool-call heavy (web_search).                                 |
+| extract    | Phase 3: Extract       | openrouter/anthropic/claude-sonnet-4.5 | mode="run"  | Tool-call heavy (web_fetch).                                  |
 | analyze    | Phase 4: Analyze       | openrouter/anthropic/claude-opus-4.6   | mode="run"  | Deep reasoning: themes, contradictions, evidence quality.      |
 | synthesize-report | Phase 5a: Synthesize Report | openrouter/anthropic/claude-opus-4.6   | mode="run"  | Nuanced writing: executive summary, key findings, narrative.   |
 | synthesize-data   | Phase 5b: Synthesize Data   | openrouter/anthropic/claude-sonnet-4.5 | mode="run"  | Structured JSON dashboard data from report + analysis.         |
-| dashboard  | Phase 6: Dashboard     | openrouter/anthropic/claude-sonnet-4.5 | mode="run"  | HTML/CSS generation. Quality ceiling baseline.                 |
-
-**Why all-Opus first:** Establishes a quality ceiling for every step before cheaper models are tried. The judge can later downgrade search/extract/dashboard to Sonnet or Haiku based on quality evaluation against this baseline.
+| dashboard  | Phase 6: Dashboard     | openrouter/anthropic/claude-sonnet-4.5 | mode="run"  | HTML/CSS generation.                                          |
 
 **Context isolation per step:**
 - `scope` — receives only the user's research topic
@@ -68,6 +65,7 @@ Don't use for:
      ```
    - Record wall-clock elapsed time after completion.
    - Capture the subagent's reply as `{{<step_id>.output}}`.
+   - Save the captured output to a per-step file before continuing, so intermediate work is available for inspection and reruns.
 
 3. **Verify model routing after every spawn.** After each `sessions_spawn` completes:
 
@@ -305,7 +303,7 @@ Instructions:
    - State the consensus view (if one exists) with supporting source URLs.
    - Note any dissenting views or contradictions with their source URLs.
    - Rate confidence: high (multiple high-credibility sources agree), medium (some agreement, some gaps), low (sparse or conflicting evidence).
-   - CALIBRATION REQUIREMENT: Confidence ratings MUST be differentiated based on actual evidence quality per sub-question. If you find yourself rating all sub-questions the same confidence level, stop and re-evaluate — uniform confidence across all sub-questions is itself a strong signal of poor calibration. A sub-question supported by a single blog post CANNOT have the same confidence as one supported by multiple peer-reviewed sources. Deliberately interrogate each rating: "What would make me lower this?" If you can't articulate what would lower it, you haven't assessed it properly.
+   - CALIBRATION REQUIREMENT: Confidence ratings MUST be differentiated based on actual evidence quality per sub-question. If you find yourself rating all sub-questions the same confidence level, stop and reassess — uniform confidence across all sub-questions is itself a strong signal of poor calibration. A sub-question supported by a single blog post CANNOT have the same confidence as one supported by multiple peer-reviewed sources. Deliberately interrogate each rating: "What would make me lower this?" If you can't articulate what would lower it, you haven't assessed it properly.
 
 2. Identify cross-cutting themes that emerge across multiple sub-questions.
 
@@ -550,30 +548,13 @@ completed
 
 ---
 
-## How the LLM Judge Refines Routing Later
-
-1. Run this skill end-to-end with the current routing on several diverse topics → collect (output quality, latency) per step per run.
-2. Re-run each individual step with a candidate cheaper model using the **same upstream inputs** from the baseline run. Holding upstream constant isolates the swap.
-3. Judge model scores each candidate output against the baseline on a 1–5 rubric (correctness, completeness, source quality, format adherence). Anything ≥ 4 on a cheaper model wins that step.
-4. Update the routing table in this file. No code changes — just edit the table.
-
-**Candidate downgrades to evaluate:**
-- `search` → `openrouter/anthropic/claude-sonnet-4-6` then `openrouter/anthropic/claude-haiku-4-5-20251001` (tool calls, minimal reasoning)
-- `extract` → `openrouter/anthropic/claude-sonnet-4-6` then `openrouter/anthropic/claude-haiku-4-5-20251001` (bulk fetch + summarize)
-- `dashboard` → `openrouter/anthropic/claude-sonnet-4-6` then `openrouter/anthropic/claude-haiku-4-5-20251001` (HTML template generation)
-- `scope` → `openrouter/anthropic/claude-sonnet-4-6` (query planning may not need Opus)
-- `synthesize-report` → `openrouter/anthropic/claude-sonnet-4-6` (writing quality vs cost tradeoff)
-- `synthesize-data` → `openrouter/anthropic/claude-sonnet-4-6` then `openrouter/anthropic/claude-haiku-4-5-20251001` (structured JSON extraction, may not need Opus)
-
----
-
 ## Common Pitfalls
 
 1. **Silent model fallback.** Always check `modelApplied` after every spawn. Additionally verify the `MODEL_USED:` line. Abort on any mismatch.
 
 2. **`mode="run"` is context-isolated.** Each child starts fresh with only the `task` string. Always use `mode="run"`, never `mode="session"`.
 
-3. **Don't retry a failed step on a different model.** Defeats routing-evaluation purpose. Fail loudly.
+3. **Don't retry a failed step on a different model.** Fail loudly.
 
 4. **Rate limits on web_search and web_fetch.** Steps 2 and 3 must execute searches/fetches sequentially, not in parallel bursts. The step prompts explicitly instruct this.
 

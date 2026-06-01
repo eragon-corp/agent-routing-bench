@@ -6,7 +6,7 @@ author: Eragon
 license: MIT
 metadata:
   eragon:
-    tags: [soc2, vendor-comparison, procurement, multimodel, routing, evaluation]
+    tags: [soc2, vendor-comparison, procurement, multimodel, routing]
     related_skills: [gmail-triage-multimodel]
 ---
 
@@ -16,7 +16,7 @@ metadata:
 
 End-to-end vendor comparison workflow for a SOC 2 Type 2 audit decision. Searches Gmail and Slack for all conversations involving both auditor candidates, extracts key proposal terms, scores each firm on the three decision factors (timeline, reputation, price), flags any issues requiring discussion, and delivers a clear decision with reasoning.
 
-The two firms under evaluation:
+The two firms being compared:
 - **Advantage Partners** — contact: Andrew Topanian (atopanian@advantage-partners.com)
 - **Prescient Security / Prescient Assurance** — contact: Griffin Mello (griffin.mello@prescientsecurity.com)
 
@@ -30,9 +30,9 @@ Each phase runs as **its own `sessions_spawn` subagent on a step-specific model 
 |------------|------------------------------|--------------------------------|------------|------------|------------------------------------------------------------------|
 | fetch      | Phase 1: Fetch emails        | anthropic/claude-opus-4.6      | openrouter | mode="run" | Tool-call + judgment; needs to find all relevant threads.        |
 | slack      | Phase 2: Fetch Slack context | anthropic/claude-sonnet-4.6    | openrouter | mode="run" | Tool-call heavy, structured extraction.                          |
-| extract    | Phase 3: Extract terms       | anthropic/claude-opus-4.6      | openrouter | mode="run" | Nuanced extraction from messy email threads. Quality ceiling.    |
-| score      | Phase 4: Score & flag        | anthropic/claude-opus-4.6      | openrouter | mode="run" | Judgment-heavy: weight three factors, flag issues. Quality ceiling. |
-| decide     | Phase 5: Decision            | anthropic/claude-opus-4.6      | openrouter | mode="run" | Final synthesis and recommendation. Quality ceiling.             |
+| extract    | Phase 3: Extract terms       | anthropic/claude-opus-4.6      | openrouter | mode="run" | Nuanced extraction from messy email threads.                     |
+| score      | Phase 4: Score & flag        | anthropic/claude-opus-4.6      | openrouter | mode="run" | Judgment-heavy: weight three factors, flag issues.               |
+| decide     | Phase 5: Decision            | anthropic/claude-opus-4.6      | openrouter | mode="run" | Final synthesis and recommendation.                              |
 
 ## Routing Protocol (orchestrator must follow exactly)
 
@@ -54,6 +54,7 @@ Each phase runs as **its own `sessions_spawn` subagent on a step-specific model 
      ```
    - Record wall-clock elapsed time after completion.
    - Capture the subagent's reply as `{{<step_id>.output}}`.
+   - Save the captured output to a per-step file before continuing, so intermediate work is available for inspection and reruns.
 
 3. **Verify model routing after every spawn.**
    - **(a)** Check `modelApplied: true` in spawn result. If false/missing, abort.
@@ -101,7 +102,7 @@ Return your output as plain JSON or structured text only. No preamble after MODE
 **Upstream input:** none.
 
 ```
-Task: fetch all Gmail conversations related to the SOC 2 auditor evaluation.
+Task: fetch all Gmail conversations related to the SOC 2 auditor comparison.
 
 Search the following queries and return ALL matching emails with full body text:
 
