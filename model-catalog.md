@@ -12,7 +12,7 @@ Verified via OpenRouter API, May 2026. All prices per million tokens.
 | 6 | grok-4.3 | x-ai/grok-4.3 | $1.250 | $2.500 | $0.200 | — | YES (read-only) |
 | 7 | deepseek-v4-pro | deepseek/deepseek-v4-pro | $0.435 | $0.870 | $0.004 | — | YES (read-only) |
 | 8 | kimi-k2.6 | moonshotai/kimi-k2.6 | $0.730 | $3.490 | $0.250 | — | YES (read-only) |
-| 9 | claude-haiku-4.5  | anthropic/claude-haiku-4.5     | $1.000    | $5.000     | —              | —               | NO
+| 9 | claude-haiku-4.5  | anthropic/claude-haiku-4.5     | $1.000    | $5.000     | —              | —               | NO |
 | 10 | minimax-m2.7 | minimax/minimax-m2.7 | $0.279 | $1.200 | — | — | NO |
 | 11 | ring-2.6-1t | inclusionai/ring-2.6-1t | $0.075 | $0.625 | $0.015 | — | YES (read-only) |
 
