@@ -92,12 +92,15 @@ def run(skill_file, output_file, model_override, timeout):
     print(f"Tab: {tab[\'url\']}", flush=True)
     ws = websocket.create_connection(tab["webSocketDebuggerUrl"], timeout=30)
     try:
-        # Fresh session
-        hostname = evaluate(ws, "window.location.hostname") or ""
-        navigate(ws, f"https://{hostname}/chat")
-        time.sleep(4)
+        # Use existing session — don't navigate, avoids triggering login redirect
+        # Verify we're on a chat page
+        url = evaluate(ws, "window.location.href") or ""
+        if "login" in url:
+            print(f"ERROR: Tab is on login page: {url}", file=sys.stderr)
+            return 1
+        print(f"Using existing session at: {url}", flush=True)
 
-        # Model override for eragon-norouting
+        # Model override for eragon-norouting: send /model command first
         if model_override:
             send_message(ws, f"/model {model_override}")
             time.sleep(5)
