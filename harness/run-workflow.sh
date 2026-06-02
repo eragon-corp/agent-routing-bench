@@ -65,31 +65,30 @@ case "$METHOD" in
 
   claude-code)
     # Claude Code CLI: runs the skill as a prompt via `claude -p`, no routing table.
-    # Requires `claude` CLI in PATH and authenticated (claude auth login).
-    claude -p "$(cat "${SKILL_FILE}")" \
+    # Strips YAML frontmatter before passing to claude. Ensures npm-global in PATH.
+    export PATH="$HOME/.npm-global/bin:$PATH"
+    SKILL_CONTENT=$(awk '/^---/{f=!f; next} !f' "${SKILL_FILE}")
+    claude -p "${SKILL_CONTENT}" \
         > "${OUTPUT_FILE}" 2>&1 \
       || HERMES_EXIT=$?
     ;;
 
   eragon-norouting)
-    # Eragon all-Opus run: anthropic/claude-opus-4.8 via OpenRouter provider.
-    # Forces all steps to Opus, ignoring any routing table in the skill.
-    hermes chat \
-        -q "$(cat "${SKILL_FILE}")" \
-        -m "anthropic/claude-opus-4.8" \
-        --provider openrouter \
-        -Q \
-        > "${OUTPUT_FILE}" 2>&1 \
+    # Eragon all-Opus run: sends skill to Eragon chat UI via CDP with model override.
+    # Forces all steps to Opus by passing /model anthropic/claude-opus-4.8 before the skill.
+    python3 "${SCRIPT_DIR}/run-eragon.py" \
+        --skill "${SKILL_FILE}" \
+        --output "${OUTPUT_FILE}" \
+        --model "anthropic/claude-opus-4.8" \
       || HERMES_EXIT=$?
     ;;
 
   eragon-routing)
-    # Eragon with routing: uses default provider, letting the skill's routing table
-    # drive per-step model selection via sessions_spawn.
-    hermes chat \
-        -q "$(cat "${SKILL_FILE}")" \
-        -Q \
-        > "${OUTPUT_FILE}" 2>&1 \
+    # Eragon with routing: sends skill to Eragon chat UI via CDP.
+    # The skill's routing table drives per-step model selection via sessions_spawn.
+    python3 "${SCRIPT_DIR}/run-eragon.py" \
+        --skill "${SKILL_FILE}" \
+        --output "${OUTPUT_FILE}" \
       || HERMES_EXIT=$?
     ;;
 
