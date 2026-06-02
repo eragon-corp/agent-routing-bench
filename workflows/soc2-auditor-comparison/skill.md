@@ -68,8 +68,8 @@ metadata:
 ROUTING_VERIFY: Echo the first line of your response as: MODEL_USED:<your model id>
 
 You are running as one isolated step of a SOC 2 auditor comparison workflow. The two firms being compared are:
-- Advantage Partners (contact: Andrew Topanian, atopanian@advantage-partners.com)
-- Prescient Security / Prescient Assurance (contact: Griffin Mello, griffin.mello@prescientsecurity.com)
+- Advantage Partners (contact: Blake Turner, blake.turner@advantage-partners.com)
+- Prescient Security / Prescient Assurance (contact: Morgan Hale, morgan.hale@prescientsecurity.com)
 
 Decision factors in priority order: (1) timeline, (2) reputation, (3) price.
 There is no Legal team — flag issues for internal discussion instead of legal review.
@@ -93,8 +93,8 @@ Search the following queries and return ALL matching emails with full body text:
 1. query: "Advantage Partners SOC 2" — up to 30 results
 2. query: "Prescient Security SOC 2" — up to 30 results
 3. query: "SOC 2 auditor" — up to 20 results
-4. query: "Griffin Mello" — up to 10 results
-5. query: "Andrew Topanian" — up to 10 results
+4. query: "Morgan Hale" — up to 10 results
+5. query: "Blake Turner" — up to 10 results
 
 Use MOCKMAIL_FETCH_EMAILS for each query with fetch_full_message: true.
 Deduplicate by messageId.
@@ -119,8 +119,8 @@ Search using SLACK_SEARCH_MESSAGES for:
 1. "SOC 2" OR "SOC2"
 2. "Prescient"
 3. "Advantage Partners"
-4. "Griffin Mello"
-5. "Andrew Topanian"
+4. "Morgan Hale"
+5. "Blake Turner"
 6. "auditor"
 
 Return up to 10 results per search. Deduplicate by ts.

@@ -30,7 +30,7 @@ pip install --user fastmcp>=2.0.0
 
 ```bash
 cd /path/to/mock-email-mcp
-/usr/bin/python3.10 seed.py        # creates seed.db with 27 synthetic emails
+/usr/bin/python3.10 seed.py        # creates seed.db from fixtures/seed_emails.json
 /usr/bin/python3.10 reset.py       # copies seed.db → inbox.db
 ```
 
@@ -50,7 +50,7 @@ The server communicates over **stdio** (standard MCP transport).
 /usr/bin/python3.10 /path/to/mock-email-mcp/reset.py
 ```
 
-This copies `seed.db` → `inbox.db`, restoring the original 27-email state.
+This copies `seed.db` → `inbox.db`, restoring the original fixture state.
 
 ## MCP configuration
 
@@ -77,12 +77,6 @@ This copies `seed.db` → `inbox.db`, restoring the original 27-email state.
 - **drafts** — draft emails
 - **labels** — Gmail system labels
 
-## Seed data distribution
+## Seed data
 
-The 27 synthetic emails are distributed as:
-- **10 unimportant**: newsletters, promos, cold SDR outreach, automated CI/CD/monitoring alerts
-- **6 important_action** (INBOX+UNREAD+IMPORTANT): offer letter, invoice approval, legal doc signature, SOC2 questionnaire, VC interview scheduling, 2× suspicious password reset alerts
-- **5 important_fyi** (INBOX): deployment status, Slack digest, AWS cost report, PR merged, standup notes
-- **4 ambiguous** (INBOX+UNREAD): forwarded link with no context, vague follow-up, calendar invite from unknown, blank subject
-
-Two emails have real attachment rows: an `.ics` calendar file and a `.pdf` offer letter.
+The fixture contains anonymized email records loaded from `fixtures/seed_emails.json`.
