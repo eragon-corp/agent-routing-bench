@@ -1,6 +1,6 @@
 # mock-email-mcp
 
-A mock Gmail MCP server for benchmarking AI email agents. Exposes 10 Gmail-like tools (matching Composio's exact tool slugs and response schemas) backed by a local SQLite database.
+A mock email MCP server. Exposes 10 Gmail-like tools backed by a local SQLite database.
 
 ## Tools
 
@@ -29,7 +29,7 @@ pip install --user fastmcp>=2.0.0
 ## Seed the database
 
 ```bash
-cd /var/lib/eragon-universal/benchmarking/mock-email-mcp
+cd /path/to/mock-email-mcp
 /usr/bin/python3.10 seed.py        # creates seed.db with 27 synthetic emails
 /usr/bin/python3.10 reset.py       # copies seed.db → inbox.db
 ```
@@ -38,8 +38,8 @@ cd /var/lib/eragon-universal/benchmarking/mock-email-mcp
 
 ```bash
 # Default: uses ./inbox.db in the current directory
-MOCK_DB_PATH=/var/lib/eragon-universal/benchmarking/mock-email-mcp/inbox.db \
-  /usr/bin/python3.10 /var/lib/eragon-universal/benchmarking/mock-email-mcp/server.py
+MOCK_DB_PATH=/path/to/mock-email-mcp/inbox.db \
+  /usr/bin/python3.10 /path/to/mock-email-mcp/server.py
 ```
 
 The server communicates over **stdio** (standard MCP transport).
@@ -47,7 +47,7 @@ The server communicates over **stdio** (standard MCP transport).
 ## Reset between runs
 
 ```bash
-/usr/bin/python3.10 /var/lib/eragon-universal/benchmarking/mock-email-mcp/reset.py
+/usr/bin/python3.10 /path/to/mock-email-mcp/reset.py
 ```
 
 This copies `seed.db` → `inbox.db`, restoring the original 27-email state.
@@ -61,9 +61,9 @@ This copies `seed.db` → `inbox.db`, restoring the original 27-email state.
   "mcpServers": {
     "mock-gmail": {
       "command": "/usr/bin/python3.10",
-      "args": ["/var/lib/eragon-universal/benchmarking/mock-email-mcp/server.py"],
+      "args": ["/path/to/mock-email-mcp/server.py"],
       "env": {
-        "MOCK_DB_PATH": "/var/lib/eragon-universal/benchmarking/mock-email-mcp/inbox.db"
+        "MOCK_DB_PATH": "/path/to/mock-email-mcp/inbox.db"
       }
     }
   }

@@ -27,13 +27,13 @@ Don't use for:
 
 | Step ID    | Phase                  | Model                       | Isolation   | Rationale                                                      |
 |------------|------------------------|-----------------------------|-------------|----------------------------------------------------------------|
-| scope      | Phase 1: Scope         | openrouter/anthropic/claude-sonnet-4.5 | mode="run"  | Nuanced query decomposition. Needs strong reasoning.           |
+| scope      | Phase 1: Scope         | openrouter/anthropic/claude-sonnet-4.6 | mode="run"  | Nuanced query decomposition. Needs strong reasoning.           |
 | search     | Phase 2: Search        | openrouter/anthropic/claude-haiku-4.5  | mode="run"  | Tool-call heavy (web_search).                                 |
-| extract    | Phase 3: Extract       | openrouter/anthropic/claude-sonnet-4.5 | mode="run"  | Tool-call heavy (web_fetch).                                  |
+| extract    | Phase 3: Extract       | openrouter/anthropic/claude-sonnet-4.6 | mode="run"  | Tool-call heavy (web_fetch).                                  |
 | analyze    | Phase 4: Analyze       | openrouter/anthropic/claude-opus-4.8   | mode="run"  | Deep reasoning: themes, contradictions, evidence quality.      |
 | synthesize-report | Phase 5a: Synthesize Report | openrouter/anthropic/claude-opus-4.8   | mode="run"  | Nuanced writing: executive summary, key findings, narrative.   |
-| synthesize-data   | Phase 5b: Synthesize Data   | openrouter/anthropic/claude-sonnet-4.5 | mode="run"  | Structured JSON dashboard data from report + analysis.         |
-| dashboard  | Phase 6: Dashboard     | openrouter/anthropic/claude-sonnet-4.5 | mode="run"  | HTML/CSS generation.                                          |
+| synthesize-data   | Phase 5b: Synthesize Data   | openrouter/anthropic/claude-sonnet-4.6 | mode="run"  | Structured JSON dashboard data from report + analysis.         |
+| dashboard  | Phase 6: Dashboard     | openrouter/anthropic/claude-sonnet-4.6 | mode="run"  | HTML/CSS generation.                                          |
 
 **Context isolation per step:**
 - `scope` — receives only the user's research topic

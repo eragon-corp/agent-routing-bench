@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 """
-orchestrate.py — Benchmarking orchestrator for agent-routing-bench
+orchestrate.py — Run orchestrator for agent-routing-bench
 
 Usage:
     python3 orchestrate.py <workflow_name> [--runs 5] [--method all|claude-code|eragon-norouting|eragon-routing]
@@ -146,21 +146,10 @@ def execute_run(workflow: str, method: str, run_dir: Path) -> dict:
     }
 
 
-def run_judge(workflow: str) -> None:
-    """Invoke harness/judge.py to score all completed runs."""
-    judge_script = HARNESS_DIR / "judge.py"
-    print(f"\n[JUDGE] Scoring all completed runs for '{workflow}' ...", flush=True)
-    subprocess.run(
-        [sys.executable, str(judge_script), workflow],
-        cwd=str(REPO_ROOT),
-        check=False,
-    )
-
-
 def print_summary(results: list[dict]) -> None:
     """Print a summary table of run outcomes."""
     print("\n" + "=" * 60)
-    print("BENCHMARK RUN SUMMARY")
+    print("RUN SUMMARY")
     print("=" * 60)
 
     # Group by method
@@ -193,7 +182,7 @@ def print_summary(results: list[dict]) -> None:
 
 def main() -> None:
     parser = argparse.ArgumentParser(
-        description="Orchestrate benchmarking runs for a given workflow."
+        description="Orchestrate runs for a given workflow."
     )
     parser.add_argument("workflow",          help="Workflow name (e.g., deep-research, gmail-triage)")
     parser.add_argument("--runs",   type=int, default=5,   help="Number of runs per method (default: 5)")
@@ -219,7 +208,7 @@ def main() -> None:
     requires_setup  = spec["requires_setup"]
     parallelizable  = spec["parallelizable"]
 
-    print(f"\nBenchmark: {workflow}")
+    print(f"\nWorkflow: {workflow}")
     print(f"  Methods  : {', '.join(methods)}")
     print(f"  Runs each: {n_runs}")
     print(f"  Parallel : {parallelizable}")
@@ -268,15 +257,7 @@ def main() -> None:
             result  = execute_run(workflow, method, run_dir)
             results.append(result)
 
-    # Print summary before judging
     print_summary(results)
-
-    # Run judge
-    completed = [r for r in results if r["success"]]
-    if completed:
-        run_judge(workflow)
-    else:
-        print("\n[JUDGE] Skipped — no successful runs to score.")
 
     print("\nDone.")
 

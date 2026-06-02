@@ -1,6 +1,6 @@
 ---
 name: soc2-auditor-comparison
-description: Compare two SOC 2 auditor quotes by searching Gmail and Slack for all relevant conversations, extracting key terms from each proposal, and producing a ranked decision (Advantage Partners vs Prescient Security, or neither) based on timeline, reputation, and price — in that order.
+description: Compare two SOC 2 auditor quotes by searching Gmail and Slack for all relevant conversations, extracting key terms from each proposal, and producing a decision (Advantage Partners vs Prescient Security, or neither) based on timeline, reputation, and price — in that order.
 version: 1.0.0
 author: Eragon
 license: MIT
@@ -21,13 +21,13 @@ metadata:
 | fetch      | Phase 1: Fetch emails        | anthropic/claude-opus-4.8      | openrouter | mode="run" | Tool-call + judgment; needs to find all relevant threads.        |
 | slack      | Phase 2: Fetch Slack context | anthropic/claude-sonnet-4.6    | openrouter | mode="run" | Tool-call heavy, structured extraction.                          |
 | extract    | Phase 3: Extract terms       | anthropic/claude-opus-4.8      | openrouter | mode="run" | Nuanced extraction from messy email threads.                     |
-| score      | Phase 4: Score & flag        | anthropic/claude-opus-4.8      | openrouter | mode="run" | Judgment-heavy: weight three factors, flag issues.               |
+| assess     | Phase 4: Assess & flag       | anthropic/claude-opus-4.8      | openrouter | mode="run" | Judgment-heavy: compare factors and flag issues.                 |
 | decide     | Phase 5: Decision            | anthropic/claude-opus-4.8      | openrouter | mode="run" | Final synthesis and recommendation.                              |
 
 ## Routing Protocol (orchestrator must follow exactly)
 
 1. Treat the routing table as the **single source of truth** for `model` per `step_id`.
-2. For each step in order (fetch → slack → extract → score → decide):
+2. For each step in order (fetch → slack → extract → assess → decide):
    - Build the per-step prompt from the "Steps" section below, substituting `{{prior_step.output}}` placeholders with the captured output of earlier steps.
    - Record wall-clock start time.
    - Spawn the subagent:
@@ -57,8 +57,8 @@ metadata:
 - `fetch` — no upstream input
 - `slack` — no upstream input (runs independently of fetch, Slack is a separate source)
 - `extract` — needs `fetch.output` + `slack.output`
-- `score` — needs `extract.output`
-- `decide` — needs `extract.output` + `score.output`
+- `assess` — needs `extract.output`
+- `decide` — needs `extract.output` + `assess.output`
 
 ---
 
@@ -168,50 +168,25 @@ For each firm extract (use null for anything not found — do not fabricate):
 Return JSON: { "advantage_partners": {...}, "prescient_security": {...} }
 ```
 
-### Step `score` — Phase 4: Score & Flag Issues
+### Step `assess` — Phase 4: Assess & Flag Issues
 
 **Upstream input:** `extract.output`
 
 ```
-Task: score both firms on the three decision factors.
+Task: assess both firms on the three decision factors.
 
 ## Extracted data:
 {{extract.output}}
 
 ---
 
-Score each firm 1–5 per factor. Priority order: timeline (×3), reputation (×2), price (×1).
-
-TIMELINE scoring:
-5 = Fastest + proactive, no delays
-4 = Competitive timeline, minor unknowns
-3 = Average, some responsiveness concerns
-2 = Slower OR significant responsiveness issues already observed
-1 = Timeline unknown AND major red flags
-
-REPUTATION scoring:
-5 = Strong: known Vanta partner, references, professional process
-4 = Good signals, minor gaps
-3 = Neutral — limited signal
-2 = Some concerns
-1 = Red flags in behavior or communications
-
-PRICE scoring:
-5 = Clearly cheaper
-4 = Slightly cheaper or equivalent with more inclusions
-3 = Equivalent or one price unknown
-2 = Slightly more expensive
-1 = Clearly more expensive
-
-Weighted score = (timeline × 3) + (reputation × 2) + (price × 1) — max 30.
-
 Return JSON:
 {
   "advantage_partners": {
-    "timeline_score": N, "timeline_rationale": "...",
-    "reputation_score": N, "reputation_rationale": "...",
-    "price_score": N, "price_rationale": "...",
-    "weighted_score": N,
+    "timeline_assessment": "...",
+    "reputation_assessment": "...",
+    "price_assessment": "...",
+    "overall_assessment": "...",
     "issues_to_discuss": ["..."]
   },
   "prescient_security": { <same shape> }
@@ -220,7 +195,7 @@ Return JSON:
 
 ### Step `decide` — Phase 5: Final Decision
 
-**Upstream input:** `extract.output` + `score.output`
+**Upstream input:** `extract.output` + `assess.output`
 
 ```
 Task: produce the final comparison report and decision.
@@ -228,8 +203,8 @@ Task: produce the final comparison report and decision.
 ## Extracted data:
 {{extract.output}}
 
-## Scores:
-{{score.output}}
+## Assessment:
+{{assess.output}}
 
 ---
 
@@ -240,13 +215,12 @@ Produce this report in plain markdown:
 ### Firm Summaries
 For each firm: 3–5 bullets covering price, timeline, inclusions, responsiveness, reputation. Quote actual numbers and dates.
 
-### Score Summary
-| Factor (weight)     | Advantage Partners    | Prescient Security    |
-|---------------------|-----------------------|-----------------------|
-| Timeline (×3)       | N/5 — rationale       | N/5 — rationale       |
-| Reputation (×2)     | N/5 — rationale       | N/5 — rationale       |
-| Price (×1)          | N/5 — rationale       | N/5 — rationale       |
-| **Weighted Total**  | **/30**               | **/30**               |
+### Factor Comparison
+| Factor      | Advantage Partners    | Prescient Security    |
+|-------------|-----------------------|-----------------------|
+| Timeline    | rationale             | rationale             |
+| Reputation  | rationale             | rationale             |
+| Price       | rationale             | rationale             |
 
 ### Issues to Discuss
 Numbered list of flagged items. For each: which firm, what the issue is, what action is needed.
@@ -269,7 +243,7 @@ Step timings:
   fetch:   <Xs> | model: <model>
   slack:   <Xs> | model: <model>
   extract: <Xs> | model: <model>
-  score:   <Xs> | model: <model>
+  assess:  <Xs> | model: <model>
   decide:  <Xs> | model: <model>
 
 --- REPORT ---
@@ -281,7 +255,7 @@ Step timings:
 | fetch   | anthropic/claude-opus-4.8   | -            | -                   | Xs          |
 | slack   | anthropic/claude-sonnet-4.6 | -            | -                   | Xs          |
 | extract | anthropic/claude-opus-4.8   | -            | -                   | Xs          |
-| score   | anthropic/claude-opus-4.8   | -            | -                   | Xs          |
+| assess  | anthropic/claude-opus-4.8   | -            | -                   | Xs          |
 | decide  | anthropic/claude-opus-4.8   | -            | -                   | Xs          |
 ```
 
@@ -293,5 +267,4 @@ Step timings:
 - [ ] Routing Audit table appended to final output.
 - [ ] `slack` step handles connection failure gracefully.
 - [ ] `extract` uses null for unknowns — no fabrication.
-- [ ] `score` weights: timeline ×3, reputation ×2, price ×1.
 - [ ] Final verdict is one of three options: Advantage Partners / Prescient Security / Neither.

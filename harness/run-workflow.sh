@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-# run-workflow.sh — Execute a single benchmark run for a given workflow + method
+# run-workflow.sh — Execute a single run for a given workflow + method
 #
 # Usage: bash run-workflow.sh <workflow_name> <method> <run_id>
 #
@@ -72,7 +72,7 @@ case "$METHOD" in
     ;;
 
   eragon-norouting)
-    # Eragon all-Opus baseline: anthropic/claude-opus-4.8 via OpenRouter provider.
+    # Eragon all-Opus run: anthropic/claude-opus-4.8 via OpenRouter provider.
     # Forces all steps to Opus, ignoring any routing table in the skill.
     hermes chat \
         -q "$(cat "${SKILL_FILE}")" \

@@ -1,14 +1,13 @@
-# Workflow Spec: gmail-triage
+# Workflow Spec: soc2-auditor-comparison
 
 ## Metadata
 
 ```yaml
-workflow: gmail-triage
-version: 0.3.0
+workflow: soc2-auditor-comparison
+version: 1.0.0
 requires_setup: true
-composio_mcp: user-configured
 parallelizable: false
-parallel_reason: "Side-effectful email writes. Sequential runs required to avoid shared inbox state collisions."
+parallel_reason: "Uses shared MockMail and Slack state. Run sequentially to keep inputs stable."
 runs_per_method: 5
 ```
 
@@ -20,11 +19,14 @@ runs_per_method: 5
 | `eragon-norouting` | Eragon run with one pinned model for every step | `anthropic/claude-opus-4.8` via `openrouter` provider | NO |
 | `eragon-routing` | Eragon run using the per-step routing table from `skill.md` | Per routing table in `skill.md` | YES |
 
-## MockMail MCP Server
+## Setup
 
-Email access for all methods uses **MockMail**, a local MCP server at `mock-email-mcp/`.
+This workflow expects:
 
-Setup once:
+- MockMail configured and seeded.
+- Slack search tools available, or a graceful fallback if Slack is unavailable.
+
+MockMail setup:
 
 ```bash
 cd mock-email-mcp
@@ -56,4 +58,4 @@ MCP configuration:
 
 `parallelizable: false`
 
-Runs must be sequential because the workflow mutates shared email state.
+Runs should be sequential because the workflow depends on shared communication data.
