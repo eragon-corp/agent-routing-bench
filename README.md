@@ -15,7 +15,8 @@ agent-routing-bench/
 │   │   ├── skill.md
 │   │   └── spec.md
 │   └── soc2-auditor-comparison/
-│       └── skill.md
+│       ├── skill.md
+│       └── spec.md
 ├── harness/
 │   ├── orchestrate.py
 │   └── run-workflow.sh

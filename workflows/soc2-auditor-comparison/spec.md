@@ -19,6 +19,16 @@ runs_per_method: 5
 | `eragon-norouting` | Eragon run with one pinned model for every step | `anthropic/claude-opus-4.8` via `openrouter` provider | NO |
 | `eragon-routing` | Eragon run using the per-step routing table from `skill.md` | Per routing table in `skill.md` | YES |
 
+## Steps
+
+| Step ID | Phase | Description |
+|---|---|---|
+| `fetch` | Phase 1 | Fetch email context |
+| `slack` | Phase 2 | Fetch Slack context |
+| `extract` | Phase 3 | Extract proposal terms |
+| `assess` | Phase 4 | Assess and flag issues |
+| `decide` | Phase 5 | Produce final decision |
+
 ## Setup
 
 This workflow expects:
