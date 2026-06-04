@@ -25,15 +25,15 @@ Don't use for:
 
 **Edit this table to change per-step models. Nothing else changes.**
 
-| Step ID    | Phase                  | Model                       | Isolation   | Rationale                                                      |
-|------------|------------------------|-----------------------------|-------------|----------------------------------------------------------------|
-| scope      | Phase 1: Scope         | openrouter/anthropic/claude-sonnet-4.6 | mode="run"  | Nuanced query decomposition. Needs strong reasoning.           |
-| search     | Phase 2: Search        | openrouter/anthropic/claude-haiku-4.5  | mode="run"  | Tool-call heavy (web_search).                                 |
-| extract    | Phase 3: Extract       | openrouter/anthropic/claude-sonnet-4.6 | mode="run"  | Tool-call heavy (web_fetch).                                  |
-| analyze    | Phase 4: Analyze       | openrouter/anthropic/claude-opus-4.8   | mode="run"  | Deep reasoning: themes, contradictions, evidence quality.      |
-| synthesize-report | Phase 5a: Synthesize Report | openrouter/anthropic/claude-opus-4.8   | mode="run"  | Nuanced writing: executive summary, key findings, narrative.   |
-| synthesize-data   | Phase 5b: Synthesize Data   | openrouter/anthropic/claude-sonnet-4.6 | mode="run"  | Structured JSON dashboard data from report + analysis.         |
-| dashboard  | Phase 6: Dashboard     | openrouter/anthropic/claude-sonnet-4.6 | mode="run"  | HTML/CSS generation.                                          |
+| Step ID           | Phase                         | Model                                      | Isolation  | Rationale                                                     |
+|-------------------|-------------------------------|--------------------------------------------|------------|---------------------------------------------------------------|
+| scope             | Phase 1: Scope                | openrouter/anthropic/claude-sonnet-4.6     | mode="run" | Nuanced query decomposition. Needs strong reasoning.          |
+| search            | Phase 2: Search               | openrouter/anthropic/claude-haiku-4.5      | mode="run" | Tool-call heavy (web_search).                                |
+| extract           | Phase 3: Extract              | openrouter/anthropic/claude-sonnet-4.6     | mode="run" | Tool-call heavy (web_fetch).                                 |
+| analyze           | Phase 4: Analyze              | openrouter/anthropic/claude-opus-4.8       | mode="run" | Deep reasoning: themes, contradictions, evidence quality.     |
+| synthesize-report | Phase 5a: Synthesize Report   | openrouter/anthropic/claude-opus-4.8       | mode="run" | Nuanced writing: executive summary, key findings, narrative.  |
+| synthesize-data   | Phase 5b: Synthesize Data     | openrouter/anthropic/claude-sonnet-4.6     | mode="run" | Structured JSON dashboard data from report + analysis.        |
+| dashboard         | Phase 6: Dashboard            | openrouter/anthropic/claude-sonnet-4.6     | mode="run" | HTML/CSS generation.                                         |
 
 **Context isolation per step:**
 - `scope` — receives only the user's research topic
@@ -168,102 +168,6 @@ Instructions:
 6. For each URL, note which sub-question(s) it relates to.
 
 IMPORTANT: Execute searches sequentially (one web_search call at a time) to avoid rate limits.
-
-Return JSON only (no f
-...(truncated)...
-
-
-    
-  
-        
-    
-      
-        
-    
-      
-      
-    
-  
-        
-    
-  
-      
-
-      
-        
-    
-      
-      
-    
-  
-      
-
-      
-        
-    
-      
-      
-    
-  
-      
-
-      
-        
-    
-      
-      
-      
-    
-  
-        
-    
-  
-      
-
-      
-
-      
-        
-          
-    
-      
-      
-      
-    
-  
-        
-        
-    
-      
-        Copy as markdown
-      
-      
-        Copy message ID
-      
-      
-    
-  
-      
-    
-  
-      
-
-        
-    
-      
-      
-      Got chunks 1-4. Continue with chunks 5/9 through 9/9 — same format. Don't repeat 1-4. Just keep going from chunk 5/9 (chars 13000-16500) to the end. Send 5,6,7,8,9 in order.
-
-    
-  
-        
-      
-
-        
-    
-      
-      
-      .
 
 Return JSON only (no fences):
 {
@@ -471,80 +375,32 @@ A line: **Dashboard saved:** research-dashboard-<timestamp>.html
 If canvas was presented: **Dashboard is live on canvas.**
 
 
-Append a Routing Audit footer:
+Append a Routing Audit footer built from real values captured during the run:
 
 **CRITICAL: The dashboard step (Phase 6) MUST always be spawned as its own subagent via `sessions_spawn(mode="run")`. The orchestrator must NEVER fall back to generating the HTML itself, even if upstream data is invalid or the dashboard subagent fails. If `synthesize-data` output is invalid JSON, abort the entire run with an error identifying the failure point. If the dashboard subagent fails, abort the entire run. No fallback to orchestrator-generated HTML is permitted — this violates context isolation and bypasses model verification gates.**
 
+```
+---
+## Routing Audit
+| step              | model                                      | modelApplied | model_verified | exit_status | wallclock_s |
+|-------------------|--------------------------------------------|--------------|----------------|-------------|-------------|
+| scope             | openrouter/anthropic/claude-sonnet-4.6     | ✅           | ✅             | completed   | 12.4        |
+| search            | openrouter/anthropic/claude-haiku-4.5      | ✅           | ✅             | completed   | 18.1        |
+| extract           | openrouter/anthropic/claude-sonnet-4.6     | ✅           | ✅             | completed   | 34.7        |
+| analyze           | openrouter/anthropic/claude-opus-4.8       | ✅           | ✅             | completed   | 6.3         |
+| synthesize-report | openrouter/anthropic/claude-opus-4.8       | ✅           | ✅             | completed   | 4.9         |
+| synthesize-data   | openrouter/anthropic/claude-sonnet-4.6     | ✅           | ✅             | completed   | 9.0         |
+| dashboard         | openrouter/anthropic/claude-sonnet-4.6     | ✅           | ✅             | completed   | 9.0         |
+```
 
-Routing Audit
+Column definitions:
+- **model** — the model ID from the routing table that was passed to `sessions_spawn`
+- **modelApplied** — ✅ if `sessions_spawn` returned `modelApplied: true`, ❌ otherwise
+- **model_verified** — ✅ if the child's first output line was `MODEL_USED:<expected_model>`, ❌ otherwise
+- **exit_status** — `completed` / `error` / `timeout` from the subagent completion event
+- **wallclock_s** — orchestrator-measured wall-clock seconds for the spawn
 
-
-
-step
-model
-modelApplied
-model_verified
-exit_status
-wallclock_s
-
-
-
-scope
-openrouter/anthropic/claude-opus-4.8
-✅
-✅
-completed
-...
-
-
-search
-openrouter/anthropic/claude-opus-4.8
-✅
-✅
-completed
-...
-
-
-extract
-openrouter/anthropic/claude-opus-4.8
-✅
-✅
-completed
-...
-
-
-analyze
-openrouter/anthropic/claude-opus-4.8
-✅
-✅
-completed
-...
-
-
-synthesize-report
-openrouter/anthropic/claude-opus-4.8
-✅
-✅
-completed
-...
-
-
-synthesize-data
-openrouter/anthropic/claude-opus-4.8
-✅
-✅
-completed
-...
-
-
-dashboard
-openrouter/anthropic/claude-opus-4.8
-✅
-✅
-completed
-...
-
-
+Keep this audit with the run output for troubleshooting and reproducibility.
 
 ---
 
